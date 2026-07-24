@@ -289,10 +289,32 @@ body::after {
     transform: translateY(-2px);
 }
 
+/* Interactive Clickable Stat Cards */
+.clickable-stat-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid var(--glass-border) !important;
+    position: relative;
+    user-select: none;
+}
+
+.clickable-stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(108, 99, 255, 0.25) !important;
+    border-color: rgba(108, 99, 255, 0.4) !important;
+}
+
+.clickable-stat-card.active-stat {
+    border-color: var(--secondary-color) !important;
+    background: rgba(0, 212, 255, 0.08) !important;
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.25) !important;
+}
+
 .sidebar-footer {
     padding: 1.25rem;
     border-top: 1px solid var(--glass-border);
 }
+
 
 
 /* Top Navbar */

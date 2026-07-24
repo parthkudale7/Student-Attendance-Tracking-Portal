@@ -108,35 +108,111 @@ switch ($action) {
         $semester = $_GET['semester'] ?? '';
         $division = $_GET['division'] ?? '';
         $subject_id = $_GET['subject_id'] ?? '';
+        $faculty_id = $_GET['faculty_id'] ?? '';
         $month = $_GET['month'] ?? '07';
         $year = $_GET['year'] ?? '2026';
 
         if ($isMock) {
-            $studentRows = [
-                ['roll_no' => 'CS2026-001', 'name' => 'Alex Mercer', 'dept' => 'CS', 'total_sessions' => 20, 'present' => 19, 'absent' => 1, 'attendance_pct' => 95.0, 'status' => 'Safe'],
-                ['roll_no' => 'CS2026-002', 'name' => 'Sophia Chen', 'dept' => 'CS', 'total_sessions' => 20, 'present' => 17, 'absent' => 3, 'attendance_pct' => 85.0, 'status' => 'Safe'],
-                ['roll_no' => 'CS2026-003', 'name' => 'David Miller', 'dept' => 'CS', 'total_sessions' => 20, 'present' => 13, 'absent' => 7, 'attendance_pct' => 65.0, 'status' => 'Warning'],
-                ['roll_no' => 'CS2026-004', 'name' => 'Emma Watson', 'dept' => 'CS', 'total_sessions' => 20, 'present' => 16, 'absent' => 4, 'attendance_pct' => 80.0, 'status' => 'Safe'],
-                ['roll_no' => 'CS2026-005', 'name' => 'Liam Gallagher', 'dept' => 'CS', 'total_sessions' => 20, 'present' => 10, 'absent' => 10, 'attendance_pct' => 50.0, 'status' => 'Critical'],
-                ['roll_no' => 'IT2026-010', 'name' => 'Zoe Kravitz', 'dept' => 'IT', 'total_sessions' => 20, 'present' => 18, 'absent' => 2, 'attendance_pct' => 90.0, 'status' => 'Safe'],
-                ['roll_no' => 'IT2026-011', 'name' => 'Lucas Scott', 'dept' => 'IT', 'total_sessions' => 20, 'present' => 14, 'absent' => 6, 'attendance_pct' => 70.0, 'status' => 'Warning'],
-                ['roll_no' => 'AD2026-020', 'name' => 'Aria Montgomery', 'dept' => 'AIDS', 'total_sessions' => 20, 'present' => 19, 'absent' => 1, 'attendance_pct' => 95.0, 'status' => 'Safe'],
-                ['roll_no' => 'AD2026-021', 'name' => 'Noah Vance', 'dept' => 'AIDS', 'total_sessions' => 20, 'present' => 9, 'absent' => 11, 'attendance_pct' => 45.0, 'status' => 'Critical']
+            $deptMap = [
+                '1' => ['code' => 'CE', 'name' => 'Computer Engineering'],
+                '2' => ['code' => 'AIDS', 'name' => 'AI & Data Science'],
+                '3' => ['code' => 'EE', 'name' => 'Electrical Engineering'],
+                '4' => ['code' => 'BT', 'name' => 'Biotechnology'],
+                '5' => ['code' => 'ME', 'name' => 'Mechanical Engineering']
             ];
 
-            // Apply filters in mock if specified
-            if ($dept_id) {
-                $deptMap = ['1' => 'CS', '2' => 'IT', '3' => 'AIDS', '4' => 'ECE'];
-                if (isset($deptMap[$dept_id])) {
-                    $targetDept = $deptMap[$dept_id];
-                    $studentRows = array_values(array_filter($studentRows, fn($s) => $s['dept'] === $targetDept));
+            $allStudentsList = [
+                ['id' => 1, 'base_roll' => '001', 'name' => 'Alex Mercer', 'default_dept' => '1', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 19],
+                ['id' => 2, 'base_roll' => '002', 'name' => 'Sophia Chen', 'default_dept' => '1', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 17],
+                ['id' => 3, 'base_roll' => '003', 'name' => 'David Miller', 'default_dept' => '1', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 13],
+                ['id' => 4, 'base_roll' => '004', 'name' => 'Emma Watson', 'default_dept' => '1', 'default_sem' => '5', 'default_div' => 'B', 'base_p' => 16],
+                ['id' => 5, 'base_roll' => '005', 'name' => 'Liam Gallagher', 'default_dept' => '1', 'default_sem' => '5', 'default_div' => 'B', 'base_p' => 10],
+                ['id' => 6, 'base_roll' => '010', 'name' => 'Zoe Kravitz', 'default_dept' => '3', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 18],
+                ['id' => 7, 'base_roll' => '011', 'name' => 'Lucas Scott', 'default_dept' => '4', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 14],
+                ['id' => 8, 'base_roll' => '020', 'name' => 'Aria Montgomery', 'default_dept' => '2', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 19],
+                ['id' => 9, 'base_roll' => '021', 'name' => 'Noah Vance', 'default_dept' => '2', 'default_sem' => '5', 'default_div' => 'B', 'base_p' => 15],
+                ['id' => 10, 'base_roll' => '030', 'name' => 'Ethan Hunt', 'default_dept' => '5', 'default_sem' => '5', 'default_div' => 'A', 'base_p' => 12]
+            ];
+
+            $filteredStudents = array_filter($allStudentsList, function($s) use ($dept_id, $semester, $division) {
+                if ($dept_id && $s['default_dept'] !== (string)$dept_id) return false;
+                if ($semester && $s['default_sem'] !== (string)$semester) return false;
+                if ($division && $s['default_div'] !== (string)$division) return false;
+                return true;
+            });
+
+            if (empty($filteredStudents)) {
+                for ($i = 0; $i < 6; $i++) {
+                    $filteredStudents[] = [
+                        'id' => 100 + $i,
+                        'base_roll' => str_pad($i + 1, 3, '0', STR_PAD_LEFT),
+                        'name' => "Student " . ($i + 1),
+                        'default_dept' => $dept_id ?: '1',
+                        'default_sem' => $semester ?: '5',
+                        'default_div' => $division ?: 'A',
+                        'base_p' => 14 + ($i % 5)
+                    ];
                 }
             }
 
-            $totalStudents = count($studentRows);
-            $totalPresent = array_sum(array_column($studentRows, 'present'));
-            $totalAbsent = array_sum(array_column($studentRows, 'absent'));
-            $avgPct = $totalStudents > 0 ? round(array_sum(array_column($studentRows, 'attendance_pct')) / $totalStudents, 1) : 0;
+            $monthNum = (int)($month ?: 7);
+            $yearNum = (int)($year ?: 2026);
+            $subjNum = (int)($subject_id ?: 0);
+            $facNum = (int)($faculty_id ?: 0);
+
+            $totalSessions = 20 + ($monthNum % 4) + ($subjNum % 3);
+            $table = [];
+            $idx = 0;
+
+            foreach ($filteredStudents as $s) {
+                $targetDeptId = $dept_id ?: $s['default_dept'];
+                $targetDeptCode = $deptMap[$targetDeptId]['code'] ?? 'CE';
+                $targetSem = $semester ?: $s['default_sem'];
+                $targetDiv = $division ?: $s['default_div'];
+
+                $rollNo = "{$targetDeptCode}{$yearNum}-S{$targetSem}{$targetDiv}-{$s['base_roll']}";
+                
+                $seed = ($s['id'] * 17) + ($monthNum * 13) + ($yearNum * 7) + ($subjNum * 19) + ($facNum * 23) + ($idx * 3);
+                $variance = ($seed % 7) - 3;
+                $present = max(0, min($totalSessions, $s['base_p'] + $variance));
+                $absent = $totalSessions - $present;
+                $pct = round(($present / $totalSessions) * 100, 1);
+
+                $status = 'Safe';
+                if ($pct < 60) $status = 'Critical';
+                elseif ($pct < 75) $status = 'Warning';
+
+                $table[] = [
+                    'roll_no' => $rollNo,
+                    'name' => $s['name'],
+                    'dept' => $targetDeptCode,
+                    'dept_id' => $targetDeptId,
+                    'semester' => $targetSem,
+                    'division' => $targetDiv,
+                    'total_sessions' => $totalSessions,
+                    'present' => $present,
+                    'absent' => $absent,
+                    'attendance_pct' => $pct,
+                    'status' => $status
+                ];
+                $idx++;
+            }
+
+            $totalStudents = count($table);
+            $totalPresent = array_sum(array_column($table, 'present'));
+            $totalAbsent = array_sum(array_column($table, 'absent'));
+            $avgPct = $totalStudents > 0 ? round(array_sum(array_column($table, 'attendance_pct')) / $totalStudents, 1) : 0;
+
+            $safeCount = count(array_filter($table, fn($s) => $s['attendance_pct'] >= 75));
+            $warnCount = count(array_filter($table, fn($s) => $s['attendance_pct'] >= 60 && $s['attendance_pct'] < 75));
+            $critCount = count(array_filter($table, fn($s) => $s['attendance_pct'] < 60));
+
+            $monthlyTrendLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            $monthlyTrendPct = [];
+            foreach ($monthlyTrendLabels as $i => $m) {
+                $mVal = $avgPct + sin($i + $monthNum + $subjNum + $facNum) * 5;
+                $monthlyTrendPct[] = round(max(50, min(99, $mVal)), 1);
+            }
 
             sendResponse([
                 'stats' => [
@@ -146,14 +222,14 @@ switch ($action) {
                     'overall_pct' => $avgPct
                 ],
                 'trend' => [
-                    'labels' => ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                    'percentages' => [82.5, 78.4, 84.1, 80.2]
+                    'labels' => $monthlyTrendLabels,
+                    'percentages' => $monthlyTrendPct
                 ],
                 'distribution' => [
                     'labels' => ['≥75% (Safe)', '60-74% (Warning)', '<60% (Critical)'],
-                    'data' => [5, 2, 2]
+                    'data' => [$safeCount, $warnCount, $critCount]
                 ],
-                'table' => $studentRows
+                'table' => $table
             ]);
         } else {
             // Live MySQL PDO Query with Prepared Statements

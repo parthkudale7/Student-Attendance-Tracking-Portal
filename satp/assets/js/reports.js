@@ -182,75 +182,178 @@ async function loadFilters() {
 }
 
 // ----------------------------------------------------
+// ----------------------------------------------------
 // 1. MONTHLY ATTENDANCE REPORT MODULE
 // ----------------------------------------------------
+window.generateMonthlyReport = async function() {
+    const btnGenerate = document.getElementById('btnGenerateMonthly');
+    if (btnGenerate) {
+        btnGenerate.disabled = true;
+        btnGenerate.innerHTML = `<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Generating...`;
+    }
+
+    try {
+        await loadMonthlyData(window.currentStatFilter || 'all');
+    } finally {
+        if (btnGenerate) {
+            btnGenerate.disabled = false;
+            btnGenerate.innerHTML = `<i class="bi bi-play-fill"></i> Generate`;
+        }
+    }
+};
+
+window.resetMonthlyFilters = function() {
+    const monthEl = document.getElementById('filterMonth');
+    if (monthEl) monthEl.value = '07';
+    const yearEl = document.getElementById('filterYear');
+    if (yearEl) yearEl.value = '2026';
+
+    ['filterDept', 'filterSem', 'filterDiv', 'filterSubject', 'filterFaculty'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+
+    const searchInput = document.querySelector('.nav-search input');
+    if (searchInput) searchInput.value = '';
+
+    const deptSelect = document.getElementById('filterDept');
+    if (deptSelect) {
+        deptSelect.dispatchEvent(new Event('change'));
+    }
+
+    window.generateMonthlyReport();
+};
+
 async function initMonthlyReport() {
     const btnGenerate = document.getElementById('btnGenerateMonthly');
     const btnReset = document.getElementById('btnResetMonthly');
 
-    if (btnGenerate) btnGenerate.addEventListener('click', loadMonthlyData);
-    if (btnReset) {
-        btnReset.addEventListener('click', () => {
-            document.querySelectorAll('.form-control-dark').forEach(el => el.value = '');
-            loadMonthlyData();
-        });
+    if (btnGenerate) btnGenerate.addEventListener('click', window.generateMonthlyReport);
+    if (btnReset) btnReset.addEventListener('click', window.resetMonthlyFilters);
+
+    // Wire Stats Cards as Interactive Clickable Filter Buttons
+    document.getElementById('cardTotalStudents')?.addEventListener('click', () => renderMonthlyTable('all'));
+    document.getElementById('cardTotalPresent')?.addEventListener('click', () => renderMonthlyTable('present'));
+    document.getElementById('cardTotalAbsent')?.addEventListener('click', () => renderMonthlyTable('absent'));
+    document.getElementById('cardOverallPct')?.addEventListener('click', () => renderMonthlyTable('pct'));
+
+    // Live search input handler
+    const searchInput = document.querySelector('.nav-search input');
+    if (searchInput) {
+        searchInput.addEventListener('input', () => renderMonthlyTable(window.currentStatFilter || 'all'));
     }
 
-    loadMonthlyData();
+    loadMonthlyData('all');
 }
 
-async function loadMonthlyData() {
-    const dept_id = document.getElementById('filterDept')?.value || '';
-    const semester = document.getElementById('filterSem')?.value || '';
-    const division = document.getElementById('filterDiv')?.value || '';
-    const month = document.getElementById('filterMonth')?.value || '07';
-    const year = document.getElementById('filterYear')?.value || '2026';
+async function loadMonthlyData(activeFilter = null) {
+    const deptSelect = document.getElementById('filterDept');
+    const semSelect = document.getElementById('filterSem');
+    const divSelect = document.getElementById('filterDiv');
+    const monthSelect = document.getElementById('filterMonth');
+    const yearSelect = document.getElementById('filterYear');
 
-    const data = await fetchAPI('monthly_report', { dept_id, semester, division, month, year });
+    const dept_id = deptSelect?.value || '';
+    const semester = semSelect?.value || '';
+    const division = divSelect?.value || '';
+    const subject_id = document.getElementById('filterSubject')?.value || '';
+    const faculty_id = document.getElementById('filterFaculty')?.value || '';
+    const month = monthSelect?.value || '07';
+    const year = yearSelect?.value || '2026';
+
+    const data = await fetchAPI('monthly_report', { dept_id, semester, division, subject_id, faculty_id, month, year });
     if (!data) return;
 
-    // Update Stats
+    window.monthlyTableData = data.table || [];
+    window.monthlyStatsData = data.stats || {};
+    window.currentStatFilter = activeFilter || window.currentStatFilter || 'all';
+
+    // Update Stats Display
     document.getElementById('statTotalStudents').textContent = data.stats.total_students;
     document.getElementById('statTotalPresent').textContent = data.stats.present_count;
     document.getElementById('statTotalAbsent').textContent = data.stats.absent_count;
     document.getElementById('statOverallPct').textContent = `${data.stats.overall_pct}%`;
 
-    // Render Table
-    const tbody = document.getElementById('monthlyTableBody');
-    if (tbody) {
-        tbody.innerHTML = '';
-        if (data.table.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">No attendance records matching filter criteria.</td></tr>`;
-        } else {
-            data.table.forEach(r => {
-                let badgeClass = 'badge-green';
-                let fillClass = 'fill-green';
-                if (r.status === 'Warning') { badgeClass = 'badge-orange'; fillClass = 'fill-orange'; }
-                if (r.status === 'Critical') { badgeClass = 'badge-red'; fillClass = 'fill-red'; }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="fw-semibold text-white">${r.roll_no}</td>
-                        <td>${r.name}</td>
-                        <td><span class="badge bg-secondary opacity-75">${r.dept}</span></td>
-                        <td><span class="text-success fw-bold">${r.present}</span></td>
-                        <td><span class="text-danger fw-bold">${r.absent}</span></td>
-                        <td>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill ${fillClass}" style="width: ${r.attendance_pct}%"></div>
-                            </div>
-                            <span class="fw-bold text-white">${r.attendance_pct}%</span>
-                        </td>
-                        <td><span class="badge-status ${badgeClass}"><i class="bi bi-shield-check"></i> ${r.status}</span></td>
-                    </tr>
-                `;
-            });
-        }
-    }
+    // Render Table based on active stat filter
+    renderMonthlyTable(window.currentStatFilter);
 
     // Render Charts
     renderMonthlyTrendChart(data.trend);
     renderMonthlyDistChart(data.distribution);
+}
+
+function renderMonthlyTable(filterType = 'all') {
+    window.currentStatFilter = filterType;
+    const tbody = document.getElementById('monthlyTableBody');
+    const headerTitle = document.getElementById('tableHeaderTitle');
+    const countBadge = document.getElementById('tableRecordCountBadge');
+    if (!tbody) return;
+
+    // Update active visual indicator on stats cards
+    document.querySelectorAll('.clickable-stat-card').forEach(card => card.classList.remove('active-stat'));
+    if (filterType === 'all') document.getElementById('cardTotalStudents')?.classList.add('active-stat');
+    if (filterType === 'present') document.getElementById('cardTotalPresent')?.classList.add('active-stat');
+    if (filterType === 'absent') document.getElementById('cardTotalAbsent')?.classList.add('active-stat');
+    if (filterType === 'pct') document.getElementById('cardOverallPct')?.classList.add('active-stat');
+
+    let rows = [...(window.monthlyTableData || [])];
+
+    if (filterType === 'present') {
+        rows = rows.filter(r => (r.status === 'Safe' || r.attendance_pct >= 75));
+        if (headerTitle) headerTitle.innerHTML = `<i class="bi bi-person-check-fill text-success me-2"></i> Present / Safe Students (≥75%)`;
+    } else if (filterType === 'absent') {
+        rows = rows.filter(r => (r.status === 'Warning' || r.status === 'Critical' || r.attendance_pct < 75));
+        if (headerTitle) headerTitle.innerHTML = `<i class="bi bi-person-x-fill text-danger me-2"></i> Absent / At-Risk Students (<75%)`;
+    } else if (filterType === 'pct') {
+        rows.sort((a, b) => b.attendance_pct - a.attendance_pct);
+        if (headerTitle) headerTitle.innerHTML = `<i class="bi bi-sort-numeric-down text-info me-2"></i> Ranked by Attendance Percentage`;
+    } else {
+        if (headerTitle) headerTitle.innerHTML = `<i class="bi bi-people-fill text-primary me-2"></i> All Total Students Records`;
+    }
+
+    // Apply Live Search filter if query exists
+    const searchQuery = document.querySelector('.nav-search input')?.value.toLowerCase().trim() || '';
+    if (searchQuery) {
+        rows = rows.filter(r => 
+            (r.roll_no && r.roll_no.toLowerCase().includes(searchQuery)) ||
+            (r.name && r.name.toLowerCase().includes(searchQuery)) ||
+            (r.dept && r.dept.toLowerCase().includes(searchQuery))
+        );
+    }
+
+    if (countBadge) {
+        countBadge.textContent = `${rows.length} ${rows.length === 1 ? 'Student' : 'Students'}`;
+    }
+
+    tbody.innerHTML = '';
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted"><i class="bi bi-info-circle me-2"></i>No student records matching filter criteria.</td></tr>`;
+        return;
+    }
+
+    rows.forEach(r => {
+        let badgeClass = 'badge-green';
+        let fillClass = 'fill-green';
+        if (r.status === 'Warning') { badgeClass = 'badge-orange'; fillClass = 'fill-orange'; }
+        if (r.status === 'Critical') { badgeClass = 'badge-red'; fillClass = 'fill-red'; }
+
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-semibold text-white">${r.roll_no}</td>
+                <td>${r.name}</td>
+                <td><span class="badge bg-secondary opacity-75">${r.dept}</span></td>
+                <td><span class="text-success fw-bold">${r.present}</span></td>
+                <td><span class="text-danger fw-bold">${r.absent}</span></td>
+                <td>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill ${fillClass}" style="width: ${r.attendance_pct}%"></div>
+                    </div>
+                    <span class="fw-bold text-white">${r.attendance_pct}%</span>
+                </td>
+                <td><span class="badge-status ${badgeClass}"><i class="bi bi-shield-check"></i> ${r.status}</span></td>
+            </tr>
+        `;
+    });
 }
 
 function renderMonthlyTrendChart(trendData) {
@@ -268,7 +371,7 @@ function renderMonthlyTrendChart(trendData) {
         data: {
             labels: trendData.labels,
             datasets: [{
-                label: 'Attendance %',
+                label: 'Monthly Attendance %',
                 data: trendData.percentages,
                 borderColor: '#6C63FF',
                 borderWidth: 3,

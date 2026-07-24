@@ -98,10 +98,10 @@ require_once __DIR__ . '/includes/sidebar.php';
                     </select>
                 </div>
                 <div class="d-flex gap-2">
-                    <button id="btnGenerateMonthly" class="btn-custom btn-primary-custom flex-grow-1">
+                    <button type="button" id="btnGenerateMonthly" onclick="generateMonthlyReport()" class="btn-custom btn-primary-custom flex-grow-1">
                         <i class="bi bi-play-fill"></i> Generate
                     </button>
-                    <button id="btnResetMonthly" class="btn-custom btn-outline-glass">
+                    <button type="button" id="btnResetMonthly" onclick="resetMonthlyFilters()" class="btn-custom btn-outline-glass" title="Reset Filters">
                         <i class="bi bi-arrow-counterclockwise"></i>
                     </button>
                 </div>
@@ -111,7 +111,7 @@ require_once __DIR__ . '/includes/sidebar.php';
         <!-- Statistics Cards Grid -->
         <div class="row g-4 mb-4">
             <div class="col-xl-3 col-sm-6">
-                <div class="glass-card stats-card">
+                <div class="glass-card stats-card clickable-stat-card active-stat" id="cardTotalStudents" title="Click to view all student records">
                     <div class="stats-info">
                         <span class="stats-label">Total Students</span>
                         <h2 class="stats-value" id="statTotalStudents">0</h2>
@@ -123,7 +123,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
-                <div class="glass-card stats-card">
+                <div class="glass-card stats-card clickable-stat-card" id="cardTotalPresent" title="Click to filter present/safe student records">
                     <div class="stats-info">
                         <span class="stats-label">Present Days</span>
                         <h2 class="stats-value text-success" id="statTotalPresent">0</h2>
@@ -135,7 +135,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
-                <div class="glass-card stats-card">
+                <div class="glass-card stats-card clickable-stat-card" id="cardTotalAbsent" title="Click to filter absent/at-risk student records">
                     <div class="stats-info">
                         <span class="stats-label">Absent Days</span>
                         <h2 class="stats-value text-danger" id="statTotalAbsent">0</h2>
@@ -147,7 +147,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                 </div>
             </div>
             <div class="col-xl-3 col-sm-6">
-                <div class="glass-card stats-card">
+                <div class="glass-card stats-card clickable-stat-card" id="cardOverallPct" title="Click to sort by overall attendance %">
                     <div class="stats-info">
                         <span class="stats-label">Attendance %</span>
                         <h2 class="stats-value" id="statOverallPct">0%</h2>
@@ -165,8 +165,8 @@ require_once __DIR__ . '/includes/sidebar.php';
             <div class="col-lg-8">
                 <div class="glass-card h-100">
                     <div class="card-header-flex">
-                        <div class="card-title"><i class="bi bi-graph-up"></i> Weekly Attendance Trend</div>
-                        <span class="text-muted small">Jul 2026 Performance</span>
+                        <div class="card-title" id="trendCardTitle"><i class="bi bi-graph-up"></i> Monthly Attendance Trend</div>
+                        <span class="text-muted small" id="trendSubtitle">Annual Monthly Performance</span>
                     </div>
                     <div style="height: 280px; position: relative;">
                         <canvas id="chartMonthlyTrend"></canvas>
@@ -188,8 +188,9 @@ require_once __DIR__ . '/includes/sidebar.php';
         <!-- Detailed Attendance Data Table -->
         <div class="glass-card">
             <div class="card-header-flex">
-                <div class="card-title"><i class="bi bi-table"></i> Student Monthly Records</div>
+                <div class="card-title" id="tableHeaderTitle"><i class="bi bi-table"></i> Student Monthly Records</div>
                 <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary px-3 py-2 rounded-pill" id="tableRecordCountBadge">0 Students</span>
                     <input type="text" class="form-control-dark" placeholder="Search table..." style="width: 200px;" onkeyup="filterTable(this, 'monthlyTable')">
                 </div>
             </div>
