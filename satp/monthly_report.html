@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance Tracking Portal - Monthly Attendance Report</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="monthly">
+<div id="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="monthly_report.html" class="sidebar-logo">
+                <div class="logo-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <div class="logo-text">Student Attendance <span>Tracking Portal</span></div>
+            </a>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-category">Main Navigation</li>
+            <li class="menu-item"><a href="monthly_report.html"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
+            <li class="menu-category">Analytics & Reports</li>
+            <li class="menu-item active"><a href="monthly_report.html"><i class="bi bi-calendar3-event-fill"></i><span>Monthly Report</span></a></li>
+            <li class="menu-item"><a href="student_report.html"><i class="bi bi-person-bounding-box"></i><span>Student Report</span></a></li>
+            <li class="menu-item"><a href="department_report.html"><i class="bi bi-building-fill-gear"></i><span>Department Report</span></a></li>
+            <li class="menu-item"><a href="low_attendance.html"><i class="bi bi-exclamation-triangle-fill"></i><span>Low Attendance</span><span class="badge bg-danger ms-auto rounded-pill" style="font-size: 0.65rem;">Alerts</span></a></li>
+            <li class="menu-category">Account</li>
+            <li class="menu-item"><a href="faculty_profile.html"><i class="bi bi-person-badge-fill"></i><span>Faculty Profile</span></a></li>
+            <li class="menu-item logout-item"><a href="#" onclick="confirmLogout(event)" class="logout-btn"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <button class="mobile-toggle-btn" id="mobileToggle"><i class="bi bi-list"></i></button>
+                <div class="nav-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search reports, students, PRN...">
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="nav-icon-btn"><i class="bi bi-bell-fill"></i><span class="badge-dot"></span></div>
+                <a href="faculty_profile.html" class="user-profile-dropdown text-decoration-none" title="View Faculty Profile">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AlexMorgan" alt="User Avatar" class="user-avatar">
+                    <div class="user-info">
+                        <span class="user-name">Prof. Alex Morgan</span>
+                        <span class="user-role">Head Admin / HOD</span>
+                    </div>
+                </a>
+            </div>
+        </nav>
+
+        <div class="page-container" id="reportExportArea">
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+                <div>
+                    <h3 class="fw-bold text-white mb-1">Monthly Attendance Report</h3>
+                    <p class="text-muted small mb-0">Overview of student monthly attendance logs, statistics, and trends.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button onclick="exportToPDF('Monthly Attendance Report')" class="btn-custom btn-secondary-custom"><i class="bi bi-file-earmark-pdf-fill"></i> Export PDF</button>
+                    <button onclick="exportToExcel('monthlyTable', 'Monthly_Attendance_Report')" class="btn-custom btn-success-custom"><i class="bi bi-file-earmark-excel-fill"></i> Export Excel</button>
+                    <button onclick="triggerPrint()" class="btn-custom btn-outline-glass"><i class="bi bi-printer-fill"></i> Print</button>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="glass-card mb-4 animate-fade-in">
+                <div class="card-header-flex">
+                    <div class="card-title"><i class="bi bi-funnel-fill"></i> Attendance Filters</div>
+                </div>
+                <div class="filter-grid">
+                    <div class="form-group"><label class="form-label">Month</label><select class="form-control-dark" id="filterMonth"><option value="07" selected>July</option></select></div>
+                    <div class="form-group"><label class="form-label">Year</label><select class="form-control-dark" id="filterYear"><option value="2026" selected>2026</option></select></div>
+                    <div class="form-group"><label class="form-label">Department</label><select class="form-control-dark filter-dept" id="filterDept"><option value="">All Departments</option></select></div>
+                    <div class="form-group"><label class="form-label">Semester</label><select class="form-control-dark" id="filterSem"><option value="">All Semesters</option><option value="5" selected>Sem 5</option></select></div>
+                    <div class="form-group"><label class="form-label">Division</label><select class="form-control-dark" id="filterDiv"><option value="">All Divisions</option></select></div>
+                    <div class="form-group"><label class="form-label">Subject</label><select class="form-control-dark filter-subject" id="filterSubject"><option value="">All Subjects</option></select></div>
+                    <div class="form-group"><label class="form-label">Faculty</label><select class="form-control-dark filter-faculty" id="filterFaculty"><option value="">All Faculty</option></select></div>
+                    <div class="d-flex gap-2">
+                        <button id="btnGenerateMonthly" class="btn-custom btn-primary-custom flex-grow-1"><i class="bi bi-play-fill"></i> Generate</button>
+                        <button id="btnResetMonthly" class="btn-custom btn-outline-glass"><i class="bi bi-arrow-counterclockwise"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="row g-4 mb-4">
+                <div class="col-xl-3 col-sm-6">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Total Students</span><h2 class="stats-value" id="statTotalStudents">45</h2></div>
+                        <div class="stats-icon-wrapper icon-blue"><i class="bi bi-people-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-sm-6">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Present Days</span><h2 class="stats-value text-success" id="statTotalPresent">820</h2></div>
+                        <div class="stats-icon-wrapper icon-green"><i class="bi bi-person-check-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-sm-6">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Absent Days</span><h2 class="stats-value text-danger" id="statTotalAbsent">80</h2></div>
+                        <div class="stats-icon-wrapper icon-red"><i class="bi bi-person-x-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-sm-6">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Attendance %</span><h2 class="stats-value" id="statOverallPct">91.1%</h2></div>
+                        <div class="stats-icon-wrapper icon-purple"><i class="bi bi-pie-chart-fill"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="glass-card h-100">
+                        <div class="card-header-flex"><div class="card-title"><i class="bi bi-graph-up"></i> Weekly Attendance Trend</div></div>
+                        <div style="height: 280px; position: relative;"><canvas id="chartMonthlyTrend"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="glass-card h-100">
+                        <div class="card-header-flex"><div class="card-title"><i class="bi bi-pie-chart"></i> Attendance Standing</div></div>
+                        <div style="height: 280px; position: relative;"><canvas id="chartMonthlyDist"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card">
+                <div class="card-header-flex"><div class="card-title"><i class="bi bi-table"></i> Student Monthly Records</div></div>
+                <div class="table-responsive-custom">
+                    <table class="table-dark-custom" id="monthlyTable">
+                        <thead>
+                            <tr><th>Roll Number</th><th>Student Name</th><th>Department</th><th>Present</th><th>Absent</th><th>Attendance %</th><th>Status</th></tr>
+                        </thead>
+                        <tbody id="monthlyTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/reports.js"></script>
+</body>
+</html>
