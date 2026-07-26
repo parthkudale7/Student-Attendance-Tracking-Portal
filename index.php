@@ -19,7 +19,7 @@
                 try {
                     const sessionData = JSON.parse(userSession);
                     if (sessionData && sessionData.role) {
-                        window.location.href = `${sessionData.role}/dashboard.html`;
+                        window.location.href = `${sessionData.role}/dashboard.php`;
                     }
                 } catch (e) {}
             }
@@ -38,7 +38,7 @@
     <div class="particles-layer"></div>
 
     <!-- Navigation -->
-    <nav class="premium-nav navbar navbar-expand-lg">
+    <nav class="premium-nav navbar navbar-expand-lg fixed-top" style="background: rgba(5, 8, 22, 0.75);">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="#">
                 <div class="logo-shield"><i class="bi bi-mortarboard-fill"></i></div>
@@ -53,10 +53,9 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto gap-4">
                     <li class="nav-item"><a class="nav-link active" href="#">Home</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Features</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Security</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">About Us</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#">Contact</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                 </ul>
                 <div class="nav-actions">
                     <a href="role_selection.html" class="btn btn-primary-lux px-4">Get Started</a>
@@ -165,19 +164,87 @@
                 </div>
 
             </div>
-            
-            <div class="trusted-by text-center mt-5 pt-4">
-                <p class="text-secondary small fw-medium mb-4 text-uppercase tracking-wider">Trusted by Educational Institutions</p>
-                <div class="d-flex justify-content-center gap-4 flex-wrap opacity-50">
-                    <i class="bi bi-buildings fs-3"></i>
-                    <i class="bi bi-bank fs-3"></i>
-                    <i class="bi bi-mortarboard fs-3"></i>
-                    <i class="bi bi-award fs-3"></i>
-                    <i class="bi bi-book fs-3"></i>
+        </div>
+    </section>
+
+    <!-- About Us Section -->
+    <section id="about" class="about-section py-5 position-relative">
+        <div class="container py-5">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6 position-relative">
+                    <div class="about-image-wrapper">
+                        <!-- Creative composition of floating elements -->
+                        <div class="glass-card p-4 animate-slide-up" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px;">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <div class="icon-box" style="width: 50px; height: 50px; background: var(--royal-blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="bi bi-rocket-takeoff text-white"></i>
+                                </div>
+                                <h4 class="mb-0 text-white">Our Mission</h4>
+                            </div>
+                            <p class="text-secondary mb-0">To revolutionize educational administration by providing a seamless, secure, and intelligent platform that empowers institutions to focus on what truly matters—education.</p>
+                        </div>
+                        
+                        <div class="glass-card p-4 mt-4 animate-slide-up delay-1" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; margin-left: 2rem;">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <div class="icon-box" style="width: 50px; height: 50px; background: var(--purple); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">
+                                    <i class="bi bi-eye text-white"></i>
+                                </div>
+                                <h4 class="mb-0 text-white">Our Vision</h4>
+                            </div>
+                            <p class="text-secondary mb-0">Building the future of digital campuses where every interaction is intuitive and data-driven insights lead to better academic outcomes.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6">
+                    <div class="about-content ps-lg-4 animate-slide-up delay-2">
+                        <div class="badge-premium mb-3">About Us</div>
+                        <h2 class="display-5 fw-bold mb-4 text-white">Empowering Education<br><span class="text-gradient-purple">Through Technology</span></h2>
+                        <p class="text-secondary mb-4 fs-5">We are a dedicated team of developers, educators, and visionaries committed to bridging the gap between traditional teaching and modern technology.</p>
+                        
+                        <div class="d-flex gap-4 mb-4">
+                            <div class="stats-item">
+                                <h3 class="text-white fw-bold mb-1">50+</h3>
+                                <span class="text-secondary small">Campuses</span>
+                            </div>
+                            <div class="stats-item border-start border-secondary ps-4">
+                                <h3 class="text-white fw-bold mb-1">100k</h3>
+                                <span class="text-secondary small">Students</span>
+                            </div>
+                            <div class="stats-item border-start border-secondary ps-4">
+                                <h3 class="text-white fw-bold mb-1">99.9%</h3>
+                                <span class="text-secondary small">Uptime</span>
+                            </div>
+                        </div>
+                        
+                        <a href="role_selection.html" class="btn btn-outline-lux mt-2">Join the Revolution <i class="bi bi-arrow-right ms-2"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Background decorative elements -->
+        <div class="position-absolute top-0 end-0 rounded-circle" style="width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, rgba(9, 9, 11, 0) 70%); z-index: -1;"></div>
+    </section>
+
+    <!-- Trusted By Section -->
+    <section class="trusted-by-section py-4 border-top border-bottom" style="border-color: rgba(255,255,255,0.05) !important; background: rgba(0,0,0,0.2);">
+        <div class="container">
+            <div class="trusted-by text-center">
+                <p class="text-secondary small fw-medium mb-3 text-uppercase tracking-wider">Trusted by Educational Institutions</p>
+                <div class="d-flex justify-content-center gap-5 flex-wrap opacity-50">
+                    <i class="bi bi-buildings fs-4"></i>
+                    <i class="bi bi-bank fs-4"></i>
+                    <i class="bi bi-mortarboard fs-4"></i>
+                    <i class="bi bi-award fs-4"></i>
+                    <i class="bi bi-book fs-4"></i>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Footer (Included via PHP) -->
+    <?php include 'includes/components/footer/footer.php'; ?>
 
     <!-- Page Transition Overlay -->
     <div id="pageTransitionOverlay" class="page-transition-overlay"></div>
@@ -197,6 +264,13 @@
                     }, 500);
                 });
             }
+        });
+
+        // Fix BFCache blank screen issue when using back button
+        window.addEventListener('pageshow', function (event) {
+            const overlay = document.getElementById('pageTransitionOverlay');
+            if (overlay) overlay.classList.remove('active');
+            document.body.classList.add('loaded');
         });
     </script>
 </body>

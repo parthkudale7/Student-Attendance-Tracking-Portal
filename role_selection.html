@@ -18,7 +18,7 @@
                 try {
                     const sessionData = JSON.parse(userSession);
                     if (sessionData && sessionData.role) {
-                        window.location.href = `${sessionData.role}/dashboard.html`;
+                        window.location.href = `${sessionData.role}/dashboard.php`;
                     }
                 } catch (e) {}
             }
@@ -34,14 +34,14 @@
     <!-- Navigation (Simplified for this page) -->
     <nav class="premium-nav navbar py-4">
         <div class="container">
-            <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="index.php">
                 <div class="logo-shield"><i class="bi bi-mortarboard-fill"></i></div>
                 <div class="brand-text">
                     <span class="d-block fw-bold text-white lh-1">Student Attendance</span>
                     <span class="d-block text-secondary small lh-1 mt-1">Tracking Portal</span>
                 </div>
             </a>
-            <a href="index.html" class="btn btn-outline-lux btn-sm transition-link"><i class="bi bi-arrow-left me-2"></i>Back to Home</a>
+            <a href="index.php" class="btn btn-outline-lux btn-sm transition-link"><i class="bi bi-arrow-left me-2"></i>Back to Home</a>
         </div>
     </nav>
 
@@ -130,6 +130,13 @@
                     window.location.href = target;
                 }, 500);
             });
+        });
+
+        // Fix BFCache blank screen issue when using back button
+        window.addEventListener('pageshow', function (event) {
+            const overlay = document.getElementById('pageTransitionOverlay');
+            if (overlay) overlay.classList.remove('active');
+            document.body.classList.add('loaded');
         });
     </script>
 </body>

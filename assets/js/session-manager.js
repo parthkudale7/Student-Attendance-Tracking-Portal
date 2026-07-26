@@ -126,7 +126,7 @@
     }
     
     function forceLogout() {
-        window.location.href = '/xampp/student%20attendence%20tracking%20protocol/auth/logout.php';
+        window.location.href = '../auth/logout.php';
     }
     
     // Only init if we are on a dashboard (not on landing page)

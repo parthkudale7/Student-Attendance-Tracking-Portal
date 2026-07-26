@@ -131,60 +131,44 @@ const CyberToast = {
                     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Authenticating...';
                     submitBtn.disabled = true;
 
-                    // Mock Database Authentication
-                    const mockUsers = {
-                        'admin@portal.com': { password: 'Admin@123', id: 1, name: 'Super Admin', status: 'active', role: 'admin' },
-                        'faculty@portal.com': { password: 'Faculty@123', id: 2, name: 'John Doe', status: 'active', role: 'faculty' },
-                        'student@portal.com': { password: 'Student@123', id: 3, name: 'Jane Smith', status: 'active', role: 'student' }
-                    };
-
                     const formData = new FormData(form);
-                    const data = Object.fromEntries(formData.entries());
-
-                    setTimeout(() => {
-                        const email = data.email;
-                        const password = data.password;
-                        const role = data.role;
-                        
-                        let result = { success: false, message: '' };
-
-                        if (!mockUsers[email]) {
-                            result.message = 'Account not found.';
-                        } else {
-                            const user = mockUsers[email];
-                            if (user.password !== password) {
-                                result.message = 'Invalid credentials.';
-                            } else if (user.role !== role) {
-                                result.message = 'Unauthorized role access.';
-                            } else if (user.status !== 'active') {
-                                result.message = 'Account is inactive.';
-                            } else {
-                                result = { success: true, redirect: `../${user.role}/dashboard.html` };
-                                
-                                // Save session using sessionStorage
+                    
+                    fetch('../api/login.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success) {
+                            // Save session using sessionStorage for frontend UI state
+                            if (result.user) {
                                 sessionStorage.setItem('user_session', JSON.stringify({
-                                    user_id: user.id,
-                                    role: user.role,
-                                    name: user.name,
+                                    user_id: result.user.id,
+                                    role: result.user.role,
+                                    name: result.user.name,
                                     login_time: Date.now()
                                 }));
                             }
-                        }
 
-                        if (result.success) {
                             // Show full screen overlay
                             const overlay = document.getElementById('loadingOverlay');
                             if(overlay) overlay.classList.add('active');
                             
                             setTimeout(() => {
                                 window.location.href = result.redirect;
-                            }, 1500); // 1.5s artificial delay for smooth transition
+                            }, 1000); 
                         } else {
                             CyberToast.show(result.message || 'Authentication failed', 'error');
                             submitBtn.innerHTML = originalText;
                             submitBtn.disabled = false;
                         }
-                    }, 800); // 800ms fake network delay
+                    })
+                    .catch(error => {
+                        console.error('Login error:', error);
+                        CyberToast.show('Network error occurred during authentication.', 'error');
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    });
                 } else {
                     const submitBtn = form.querySelector('button[type="submit"]');
                     if (submitBtn && form.id !== 'logoutForm') {
