@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Student Attendance Tracking Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="../assets/css/auth.css">
+</head>
+<body class="login-page page-transition" id="loginBody">
+
+    <!-- Background Elements -->
+    <div class="ambient-light login-glow"></div>
+    <div class="particles-layer"></div>
+    <div id="toastContainer" class="toast-container"></div>
+
+    <div class="login-container container d-flex align-items-center justify-content-center min-vh-100">
+        <div class="login-split-card glass-card row w-100 mx-auto g-0 animate-slide-up">
+            
+            <!-- Left Side: Illustration -->
+            <div class="col-lg-6 d-none d-lg-flex flex-column align-items-center justify-content-center illustration-side position-relative overflow-hidden p-5">
+                <div class="bg-shape"></div>
+                <div id="dynamicIllustration"></div>
+                <div class="text-center mt-5 text-white position-relative z-index-2">
+                    <h2 class="fw-bold mb-3" id="dynamicTitleLeft">Login</h2>
+                    <p class="text-secondary opacity-75" id="dynamicDescLeft">Secure access to the Student Attendance Tracking Portal.</p>
+                </div>
+                
+                <!-- Floating mini elements -->
+                <div class="floating-icons">
+                    <i class="bi bi-graph-up pe-4 mb-4 opacity-50"></i>
+                    <i class="bi bi-person-check ps-4 mb-4 opacity-50"></i>
+                    <i class="bi bi-gear mt-4 pe-3 opacity-50"></i>
+                </div>
+            </div>
+
+            <!-- Right Side: Form -->
+            <div class="col-lg-6 form-side p-5 d-flex flex-column justify-content-center position-relative">
+                <a href="../role_selection.html" class="back-link position-absolute top-0 start-0 m-4 text-secondary text-decoration-none small transition-link">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+
+                <div class="form-header text-center mb-5 mt-4">
+                    <div class="role-icon-header mx-auto mb-3">
+                        <i class="bi" id="dynamicIcon"></i>
+                    </div>
+                    <h3 class="text-white fw-bold mb-2" id="dynamicTitleRight">Login</h3>
+                    <p class="text-secondary small">Enter your credentials to access your account</p>
+                </div>
+
+                <form id="ajaxLoginForm" class="needs-validation" novalidate>
+                    <input type="hidden" name="role" id="roleInput" value="student">
+                    
+                    <div class="mb-4 form-group-lux">
+                        <label class="form-label text-secondary small fw-medium mb-2">Email Address</label>
+                        <div class="input-wrapper position-relative">
+                            <i class="bi bi-envelope position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                            <input type="email" class="form-control form-control-lux ps-5" name="email" placeholder="Enter your email" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 form-group-lux">
+                        <label class="form-label text-secondary small fw-medium mb-2">Password</label>
+                        <div class="input-wrapper position-relative">
+                            <i class="bi bi-lock position-absolute top-50 start-0 translate-middle-y ms-3 text-secondary"></i>
+                            <input type="password" class="form-control form-control-lux ps-5 pe-5" id="password" name="password" placeholder="Enter your password" required>
+                            <span class="position-absolute top-50 end-0 translate-middle-y me-3 toggle-password text-secondary" data-target="password">
+                                <i class="bi bi-eye"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-5">
+                        <div class="form-check custom-checkbox">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label text-secondary small" for="rememberMe">Remember Me</label>
+                        </div>
+                        <a href="#" class="text-secondary small text-decoration-none hover-glow">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-lux btn-login w-100 mb-4" id="modalSubmitBtn">
+                        Login <i class="bi bi-arrow-right ms-2"></i>
+                    </button>
+                    
+                    <div class="text-center text-secondary small position-relative or-divider mb-4">
+                        <span class="bg-glass px-2">or</span>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="../role_selection.html" class="text-secondary text-decoration-none small hover-glow transition-link">
+                            <i class="bi bi-arrow-left me-1"></i> Back to Role Selection
+                        </a>
+                    </div>
+                </form>
+
+                <div class="footer-secure mt-auto text-center pt-4 border-top border-secondary border-opacity-10">
+                    <div class="d-flex justify-content-center gap-3 text-secondary" style="font-size: 0.75rem;">
+                        <span><i class="bi bi-check2-circle text-success me-1"></i>Secure Access</span>
+                        <span><i class="bi bi-shield-check text-success me-1"></i>Protected Data</span>
+                        <span><i class="bi bi-laptop text-success me-1"></i>Trusted Platform</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Full Screen Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content text-center">
+            <div class="portal-logo-glow mb-4">
+                <i class="bi bi-shield-check fs-1"></i>
+            </div>
+            <div class="spinner-border theme-spinner mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+            <h4 class="text-white fw-bold mb-2">Authenticating...</h4>
+            <p class="text-secondary small">Please wait...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/auth-validation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Determine role from URL
+            const params = new URLSearchParams(window.location.search);
+            let role = params.get('role') || 'student';
+            const validRoles = ['admin', 'faculty', 'student'];
+            if (!validRoles.includes(role)) role = 'student';
+            
+            // Set dynamic properties
+            const roleProps = {
+                'admin': {
+                    title: 'Super Admin Login',
+                    desc: 'Complete control over authentication and authorization.',
+                    icon: 'bi-shield-fill',
+                    colorClass: 'theme-admin',
+                    illustration: '<div class="shield-illustration"><i class="bi bi-shield-check"></i><div class="glow-ring"></div></div>'
+                },
+                'faculty': {
+                    title: 'Faculty Login',
+                    desc: 'Secure login to manage attendance and reports.',
+                    icon: 'bi-person-workspace',
+                    colorClass: 'theme-faculty',
+                    illustration: '<div class="faculty-illustration"><i class="bi bi-person-video3"></i><div class="glow-ring"></div></div>'
+                },
+                'student': {
+                    title: 'Student Login',
+                    desc: 'Access your attendance dashboard securely.',
+                    icon: 'bi-mortarboard-fill',
+                    colorClass: 'theme-student',
+                    illustration: '<div class="student-illustration"><i class="bi bi-mortarboard-fill"></i><div class="glow-ring"></div></div>'
+                }
+            };
+            
+            const props = roleProps[role];
+            
+            // Apply DOM updates
+            document.title = props.title + ' - Portal';
+            document.getElementById('loginBody').classList.add(props.colorClass);
+            document.getElementById('dynamicIllustration').innerHTML = props.illustration;
+            document.getElementById('dynamicTitleLeft').textContent = props.title;
+            document.getElementById('dynamicDescLeft').textContent = props.desc;
+            document.getElementById('dynamicTitleRight').textContent = props.title;
+            document.getElementById('dynamicIcon').classList.add(props.icon);
+            document.getElementById('roleInput').value = role;
+            
+            // Initial Fade In
+            setTimeout(() => {
+                document.body.classList.add('loaded');
+            }, 100);
+            
+            // Handle smooth page transitions for links
+            document.querySelectorAll('.transition-link').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const target = this.getAttribute('href');
+                    document.body.classList.remove('loaded');
+                    setTimeout(() => {
+                        window.location.href = target;
+                    }, 500); // 500ms fade out
+                });
+            });
+            
+            // Handle Logout Toasts via URL params
+            const msg = params.get('logout') ? 'Logged out successfully.' : (params.get('timeout') ? 'Your session has expired due to inactivity.' : '');
+            const type = params.get('timeout') ? 'error' : 'success';
+            if(msg && typeof CyberToast !== 'undefined') {
+                CyberToast.show(msg, type);
+            }
+        });
+    </script>
+</body>
+</html>
