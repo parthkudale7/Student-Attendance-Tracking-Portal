@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance Tracking Portal - Low Attendance Alerts</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body data-page="low_attendance">
+<div id="app-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="monthly_report.html" class="sidebar-logo">
+                <div class="logo-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                <div class="logo-text">Student Attendance <span>Tracking Portal</span></div>
+            </a>
+        </div>
+        <ul class="sidebar-menu">
+            <li class="menu-category">Main Navigation</li>
+            <li class="menu-item"><a href="monthly_report.html"><i class="bi bi-grid-1x2-fill"></i><span>Dashboard</span></a></li>
+            <li class="menu-category">Analytics & Reports</li>
+            <li class="menu-item"><a href="monthly_report.html"><i class="bi bi-calendar3-event-fill"></i><span>Monthly Report</span></a></li>
+            <li class="menu-item"><a href="student_report.html"><i class="bi bi-person-bounding-box"></i><span>Student Report</span></a></li>
+            <li class="menu-item"><a href="department_report.html"><i class="bi bi-building-fill-gear"></i><span>Department Report</span></a></li>
+            <li class="menu-item active"><a href="low_attendance.html"><i class="bi bi-exclamation-triangle-fill"></i><span>Low Attendance</span><span class="badge bg-danger ms-auto rounded-pill" style="font-size: 0.65rem;">Alerts</span></a></li>
+            <li class="menu-category">Account</li>
+            <li class="menu-item"><a href="faculty_profile.html"><i class="bi bi-person-badge-fill"></i><span>Faculty Profile</span></a></li>
+            <li class="menu-item logout-item"><a href="#" onclick="confirmLogout(event)" class="logout-btn"><i class="bi bi-box-arrow-right"></i><span>Logout</span></a></li>
+        </ul>
+    </aside>
+
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="navbar">
+            <div class="navbar-left">
+                <button class="mobile-toggle-btn" id="mobileToggle"><i class="bi bi-list"></i></button>
+                <div class="nav-search">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search reports, students, PRN...">
+                </div>
+            </div>
+            <div class="navbar-right">
+                <div class="nav-icon-btn"><i class="bi bi-bell-fill"></i><span class="badge-dot"></span></div>
+                <a href="faculty_profile.html" class="user-profile-dropdown text-decoration-none" title="View Faculty Profile">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=AlexMorgan" alt="User Avatar" class="user-avatar">
+                    <div class="user-info">
+                        <span class="user-name">Prof. Alex Morgan</span>
+                        <span class="user-role">Head Admin / HOD</span>
+                    </div>
+                </a>
+            </div>
+        </nav>
+
+        <div class="page-container" id="reportExportArea">
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+                <div>
+                    <h3 class="fw-bold text-white mb-1">Low Attendance Alerts & Defaulter Log</h3>
+                    <p class="text-muted small mb-0">Monitor students falling below statutory attendance thresholds and dispatch official notifications.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button onclick="exportToPDF('Low Attendance Defaulters')" class="btn-custom btn-secondary-custom"><i class="bi bi-file-earmark-pdf-fill"></i> Export PDF</button>
+                    <button onclick="exportToExcel('lowAttendanceTable', 'Low_Attendance_Defaulters')" class="btn-custom btn-success-custom"><i class="bi bi-file-earmark-excel-fill"></i> Export Excel</button>
+                    <button onclick="triggerPrint()" class="btn-custom btn-outline-glass"><i class="bi bi-printer-fill"></i> Print</button>
+                </div>
+            </div>
+
+            <!-- Threshold Config Card -->
+            <div class="glass-card mb-4 animate-fade-in">
+                <div class="card-header-flex">
+                    <div class="card-title text-warning"><i class="bi bi-sliders"></i> Alert Threshold Configuration</div>
+                    <span class="badge bg-warning text-dark fw-bold">Mandatory Standard: 75%</span>
+                </div>
+                <div class="row align-items-center g-3">
+                    <div class="col-md-4">
+                        <label class="form-label text-white">Minimum Required Threshold (%):</label>
+                        <input type="number" class="form-control-dark w-100" id="thresholdInput" value="75" min="1" max="100">
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex gap-3 align-items-center flex-wrap mt-md-4">
+                            <div class="badge-status badge-red"><i class="bi bi-x-octagon-fill"></i> Critical Risk (&lt; 60%)</div>
+                            <div class="badge-status badge-orange"><i class="bi bi-exclamation-triangle-fill"></i> Moderate Risk (60% - 74%)</div>
+                            <div class="badge-status badge-green"><i class="bi bi-check-circle-fill"></i> Safe Threshold (&ge; 75%)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Total Flagged Students</span><h2 class="stats-value text-white" id="statTotalFlagged">3</h2></div>
+                        <div class="stats-icon-wrapper icon-purple"><i class="bi bi-flag-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Critical Risk (&lt; 60%)</span><h2 class="stats-value text-danger" id="statCriticalCount">1</h2></div>
+                        <div class="stats-icon-wrapper icon-red"><i class="bi bi-exclamation-octagon-fill"></i></div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="glass-card stats-card">
+                        <div class="stats-info"><span class="stats-label">Moderate Risk (60-74%)</span><h2 class="stats-value text-warning" id="statWarningCount">2</h2></div>
+                        <div class="stats-icon-wrapper icon-purple"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="glass-card">
+                <div class="card-header-flex">
+                    <div class="card-title text-danger"><i class="bi bi-person-x-fill"></i> Flagged Defaulter List</div>
+                    <button onclick="alert('Bulk SMS and Email alerts queued for dispatch to all flagged guardians.')" class="btn-custom btn-danger-custom btn-sm"><i class="bi bi-send-fill"></i> Send Bulk Alerts</button>
+                </div>
+                <div class="table-responsive-custom">
+                    <table class="table-dark-custom" id="lowAttendanceTable">
+                        <thead>
+                            <tr><th>Roll No</th><th>Student Name</th><th>Department</th><th>Sem & Div</th><th>Attendance %</th><th>Risk Status</th><th>Guardian Contact</th><th>Action</th></tr>
+                        </thead>
+                        <tbody id="lowAttendanceTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="assets/js/reports.js"></script>
+</body>
+</html>
