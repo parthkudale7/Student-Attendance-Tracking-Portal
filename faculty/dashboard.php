@@ -22,6 +22,7 @@ check_auth(['faculty']); // Only faculty allowed
         <a href="#" class="nav-link"><i class="bi bi-book"></i> Subjects</a>
         <a href="#" class="nav-link"><i class="bi bi-file-earmark-text"></i> Reports</a>
         <a href="../auth/change_password.php" class="nav-link"><i class="bi bi-key"></i> Security</a>
+        <a href="../auth/face_setup.php" class="nav-link text-neon-blue"><i class="bi bi-person-bounding-box"></i> Face ID Setup</a>
         <a href="../auth/logout.php" class="nav-link mt-auto"><i class="bi bi-box-arrow-right text-neon-pink"></i> Logout</a>
     </div>
 
@@ -42,6 +43,7 @@ check_auth(['faculty']); // Only faculty allowed
                 <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark mt-2">
                     <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
                     <li><a class="dropdown-item" href="../auth/change_password.php"><i class="bi bi-key me-2"></i>Change Password</a></li>
+                    <li><a class="dropdown-item text-neon-blue" href="../auth/face_setup.php"><i class="bi bi-person-bounding-box me-2"></i>Setup Face ID</a></li>
                     <li><hr class="dropdown-divider border-secondary"></li>
                     <li><a class="dropdown-item text-neon-pink" href="../auth/logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
                 </ul>
