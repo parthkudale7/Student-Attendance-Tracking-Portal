@@ -1,50 +1,23 @@
-<?php
+﻿<?php
 $pageTitle = "Admin Dashboard";
 $activeNav = "dashboard";
 require_once __DIR__ . '/../includes/header.php';
 require_once __DIR__ . '/../includes/sidebar.php';
 ?>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="brand"><i class="bi bi-shield-check text-neon-blue"></i> ADMIN OP</div>
-        <a href="#" class="nav-link active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-        <a href="#" class="nav-link"><i class="bi bi-building"></i> Departments</a>
-        <a href="#" class="nav-link"><i class="bi bi-people"></i> Faculty</a>
-        <a href="#" class="nav-link"><i class="bi bi-mortarboard"></i> Students</a>
-        <a href="#" class="nav-link"><i class="bi bi-book"></i> Subjects</a>
-        <a href="#" class="nav-link"><i class="bi bi-clipboard-data"></i> Attendance</a>
-        <a href="#" class="nav-link"><i class="bi bi-bar-chart"></i> Analytics</a>
-        <a href="#" class="nav-link"><i class="bi bi-gear"></i> Settings</a>
-        <a href="../auth/change_password.php" class="nav-link"><i class="bi bi-key"></i> Security</a>
-        <a href="../auth/face_setup.php" class="nav-link text-neon-blue"><i class="bi bi-person-bounding-box"></i> Face ID Setup</a>
-        <a href="../auth/logout.php" class="nav-link mt-auto"><i class="bi bi-box-arrow-right text-neon-pink"></i> Logout</a>
+<!-- Page Header / Hero Banner -->
+<div class="page-header-container">
+    <div>
+        <h2 class="page-header-title">Super Admin Dashboard</h2>
+        <p class="page-header-subtitle">Overview of university portal masters, faculty management, and subject allocations</p>
     </div>
-
-    <!-- Topbar -->
-    <div class="topbar">
-        <div class="search-bar">
-            <input type="text" placeholder="Search records...">
-        </div>
-        <div class="topbar-icons">
-            <div class="notification-bell">
-                <i class="bi bi-bell fs-5"></i>
-                <span class="badge rounded-pill">3</span>
-            </div>
-            <div class="profile-dropdown dropdown">
-                <div class="d-flex align-items-center gap-2 cursor-pointer" data-bs-toggle="dropdown">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" alt="Profile">
-                    <span class="text-white fw-bold d-none d-md-block"><?php echo htmlspecialchars($_SESSION['name']); ?></span>
-                </div>
-                <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark mt-2">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
-                    <li><a class="dropdown-item" href="../auth/change_password.php"><i class="bi bi-key me-2"></i>Change Password</a></li>
-                    <li><a class="dropdown-item text-neon-blue" href="../auth/face_setup.php"><i class="bi bi-person-bounding-box me-2"></i>Setup Face ID</a></li>
-                    <li><hr class="dropdown-divider border-secondary"></li>
-                    <li><a class="dropdown-item text-neon-pink" href="../auth/logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-                </ul>
-            </div>
-        </div>
+    <div class="d-flex gap-2">
+        <a href="faculty_registration.php" class="btn-primary-action">
+            <i class="fa-solid fa-user-plus"></i> Add Faculty
+        </a>
+        <a href="subject_allocation.php" class="btn btn-outline-primary btn-sm rounded-3 d-inline-flex align-items-center gap-2" style="background: rgba(79, 124, 255, 0.12); border-color: rgba(79, 124, 255, 0.35); color: #4F7CFF; font-weight: 600; padding: 0.6rem 1.2rem; border-radius: 10px !important;">
+            <i class="fa-solid fa-diagram-project"></i> Allocate Subject
+        </a>
     </div>
 </div>
 
@@ -60,7 +33,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                         <span class="text-primary font-weight-bold" style="font-size: 0.78rem; letter-spacing: 0.5px;">SYSTEM OPERATIONAL</span>
                     </div>
                     <h3 class="text-white fw-bold mb-1" style="letter-spacing: -0.4px;">
-                        <span id="dynamicGreeting">Good Morning 👋</span>, Super Admin
+                        <span id="dynamicGreeting">Good Morning ≡ƒæï</span>, Super Admin
                     </h3>
                     <p class="small mb-0" style="color: #CBD5E1; font-weight: 500;">Hope you're having a productive day. Here's today's attendance & allocation summary.</p>
                 </div>
@@ -121,7 +94,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                         </p>
                     </div>
                     <div class="text-end">
-                        <small class="text-primary fw-semibold" id="dailyQuoteAuthor" style="font-size: 0.72rem;">— Tim Ferriss</small>
+                        <small class="text-primary fw-semibold" id="dailyQuoteAuthor" style="font-size: 0.72rem;">ΓÇö Tim Ferriss</small>
                     </div>
                 </div>
             </div>
