@@ -84,6 +84,10 @@
                         Login <i class="bi bi-arrow-right ms-2"></i>
                     </button>
                     
+                    <button type="button" class="btn btn-outline-info w-100 mb-4" id="faceLoginBtn" style="display: none;" data-bs-toggle="modal" data-bs-target="#faceLoginModal">
+                        <i class="bi bi-person-bounding-box me-2"></i> Login with Face
+                    </button>
+                    
                     <div class="text-center text-secondary small position-relative or-divider mb-4">
                         <span class="bg-glass px-2">or</span>
                     </div>
@@ -107,6 +111,27 @@
         </div>
     </div>
 
+    <!-- Face Login Modal -->
+    <div class="modal fade" id="faceLoginModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white" style="border: 1px solid var(--neon-blue);">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title"><i class="bi bi-person-bounding-box text-neon-blue"></i> Face ID Login</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="faceLoginCamera" style="position:relative; width: 100%; max-width: 400px; margin: 0 auto; overflow: hidden; border-radius: 10px;">
+                        <video id="faceVideo" autoplay muted playsinline style="width: 100%; border-radius: 10px;"></video>
+                        <canvas id="faceCanvas" style="position: absolute; top:0; left:0; width: 100%; height:100%; z-index: 15;"></canvas>
+                        <div class="scanner-laser"></div>
+                        <div class="face-box-overlay"></div>
+                    </div>
+                    <p id="faceStatus" class="mt-3 text-secondary">Loading models...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Full Screen Loading Overlay -->
     <div id="loadingOverlay" class="loading-overlay">
         <div class="loading-content text-center">
@@ -121,6 +146,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../assets/js/face-api.min.js"></script>
     <script src="../assets/js/auth-validation.js?v=4"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -170,6 +196,11 @@
             const forgotLink = document.getElementById('forgotPasswordLink');
             if (forgotLink) forgotLink.href = `forgot_password.php?role=${role}`;
             
+            if (role === 'admin' || role === 'faculty') {
+                document.getElementById('faceLoginBtn').style.display = 'block';
+                initFaceLogin(role);
+            }
+            
             // Initial Fade In
             setTimeout(() => {
                 document.body.classList.add('loaded');
@@ -199,6 +230,131 @@
         window.addEventListener('pageshow', function (event) {
             document.body.classList.add('loaded');
         });
+
+        function initFaceLogin(role) {
+            const faceModal = document.getElementById('faceLoginModal');
+            const video = document.getElementById('faceVideo');
+            const canvas = document.getElementById('faceCanvas');
+            const statusMsg = document.getElementById('faceStatus');
+            let stream = null;
+            let faceApiLoaded = false;
+            let scanning = false;
+
+            faceModal.addEventListener('show.bs.modal', async () => {
+                scanning = true;
+                if (!faceApiLoaded) {
+                    statusMsg.textContent = "Loading AI models...";
+                    try {
+                        await Promise.all([
+                            faceapi.nets.ssdMobilenetv1.loadFromUri('../assets/models'),
+                            faceapi.nets.faceLandmark68Net.loadFromUri('../assets/models'),
+                            faceapi.nets.faceRecognitionNet.loadFromUri('../assets/models')
+                        ]);
+                        faceApiLoaded = true;
+                    } catch (e) {
+                        statusMsg.textContent = "Error loading models.";
+                        return;
+                    }
+                }
+                
+                statusMsg.textContent = "Requesting camera access...";
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                    video.srcObject = stream;
+                } catch (e) {
+                    statusMsg.textContent = "Camera access denied.";
+                }
+            });
+
+            video.addEventListener('play', () => {
+                if (!scanning) return;
+                statusMsg.textContent = "Scanning face... Please wait.";
+                document.getElementById('faceLoginCamera').classList.add('scanner-active');
+                
+                const displaySize = { width: video.videoWidth || 400, height: video.videoHeight || 300 };
+                faceapi.matchDimensions(canvas, displaySize);
+
+                const interval = setInterval(async () => {
+                    if (video.paused || video.ended || !scanning) return clearInterval(interval);
+                    
+                    const detections = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    if (detections) {
+                        const resizedDetections = faceapi.resizeResults(detections, displaySize);
+                        faceapi.draw.drawDetections(canvas, resizedDetections);
+                        
+                        statusMsg.textContent = "Face detected! Authenticating...";
+                        document.getElementById('faceLoginCamera').classList.remove('scanner-active');
+                        scanning = false; // Stop scanning once face detected
+                        clearInterval(interval);
+                        
+                        try {
+                            const descArray = Array.from(detections.descriptor);
+                            const response = await fetch('../api/login_face.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ role: role, descriptor: descArray })
+                            });
+                            
+                            const data = await response.json();
+                            if (data.success) {
+                                statusMsg.textContent = data.message;
+                                statusMsg.style.color = "var(--neon-green)";
+                                
+                                // Close the modal
+                                const modalEl = document.getElementById('faceLoginModal');
+                                const modal = bootstrap.Modal.getInstance(modalEl);
+                                if (modal) modal.hide();
+                                
+                                // Save session using sessionStorage for frontend UI state
+                                if (data.user) {
+                                    sessionStorage.setItem('user_session', JSON.stringify({
+                                        user_id: data.user.id,
+                                        role: data.user.role,
+                                        name: data.user.name,
+                                        login_time: Date.now()
+                                    }));
+                                }
+                                
+                                // Show full screen overlay just like standard login
+                                const overlay = document.getElementById('loadingOverlay');
+                                if(overlay) overlay.classList.add('active');
+
+                                setTimeout(() => {
+                                    window.location.href = data.redirect;
+                                }, 1500);
+                            } else {
+                                statusMsg.textContent = data.message;
+                                statusMsg.style.color = "var(--neon-pink)";
+                                setTimeout(() => { 
+                                    scanning = true; 
+                                    document.getElementById('faceLoginCamera').classList.add('scanner-active');
+                                }, 3000); // Resume scanning after delay
+                            }
+                        } catch (e) {
+                            statusMsg.textContent = "Network error.";
+                            setTimeout(() => { 
+                                scanning = true; 
+                                document.getElementById('faceLoginCamera').classList.add('scanner-active');
+                            }, 3000);
+                        }
+                    } else {
+                        statusMsg.textContent = "No face detected. Please look at the camera.";
+                    }
+                }, 500);
+            });
+
+            faceModal.addEventListener('hidden.bs.modal', () => {
+                scanning = false;
+                document.getElementById('faceLoginCamera').classList.remove('scanner-active');
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+            });
+        }
     </script>
 </body>
 </html>
