@@ -1,4 +1,4 @@
-﻿// Attendance Validation Logic
+// Attendance Validation Logic
 
 window.fetchValidationRecords = async () => {
     // Fetch all validation records directly

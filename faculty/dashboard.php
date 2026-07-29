@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 session_start();
 require_once '../includes/auth_guard.php';
 check_auth(['faculty', 'admin']);
@@ -92,7 +92,7 @@ check_auth(['faculty', 'admin']);
                     <div class="profile-dropdown" id="profile-toggle" style="position: relative;">
                         <img src="https://ui-avatars.com/api/?name=Prof+Smith&background=0D8ABC&color=fff" alt="Profile" class="profile-img" id="nav-profile-img">
                         <div class="profile-info">
-                            <div class="profile-name" id="nav-profile-name">Prof. Smith</div>
+                            <div class="profile-name" id="nav-profile-name"><?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?></div>
                             <div class="profile-role" id="nav-profile-role">Computer Science</div>
                         </div>
                         <i class="fa-solid fa-chevron-down"></i>
@@ -122,7 +122,7 @@ check_auth(['faculty', 'admin']);
         <div class="view-content fade-in">
             <div class="welcome-banner glass-card">
                 <div class="banner-content">
-                    <h2>Welcome back, Prof. Smith!</h2>
+                    <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?>!</h2>
                     <p>Here's an overview of your classes and attendance today.</p>
                 </div>
                 <div class="banner-image">

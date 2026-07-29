@@ -1,4 +1,4 @@
-﻿window.historyLogic = (function() {
+window.historyLogic = (function() {
     let allRecords = [];
     let filteredRecords = [];
     let masterData = null;

@@ -1,4 +1,4 @@
-﻿
+
 const commonSem1 = [
     '107001 - Engineering Mathematics-I',
     '107002 - Engineering Physics',
