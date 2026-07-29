@@ -15,7 +15,7 @@ check_auth(['faculty', 'admin']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
     <!-- Ambient Background Elements -->
@@ -890,9 +890,9 @@ check_auth(['faculty', 'admin']);
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <!-- App Logic -->
-    <script src="historyLogic.js?v=5"></script>
-    <script src="validationLogic.js?v=5"></script>
-    <script src="app.js?v=5"></script>
+    <script src="historyLogic.js?v=6"></script>
+    <script src="validationLogic.js?v=6"></script>
+    <script src="app.js?v=6"></script>
 </body>
 </html>
 

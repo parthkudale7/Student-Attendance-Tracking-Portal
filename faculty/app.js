@@ -428,7 +428,7 @@ function navigateTo(viewId) {
         if (currentUser) {
             // Update Welcome Banner if it exists in this view
             const welcomeTitle = container.querySelector('.welcome-banner h2');
-            if (welcomeTitle) welcomeTitle.textContent = `Welcome back, ${currentUser.name}!`;
+            // if (welcomeTitle) welcomeTitle.textContent = `Welcome back, ${currentUser.name}!`; // Commented out to use PHP name
 
             // Dynamic subject population is now handled in initViewLogic for each view
         }
@@ -892,9 +892,9 @@ function updateTopNavProfile() {
     const roleEl = document.getElementById('nav-profile-role');
     const imgEl = document.getElementById('nav-profile-img');
     
-    if(nameEl) nameEl.textContent = user.name;
+    // if(nameEl) nameEl.textContent = user.name;
     if(roleEl) roleEl.textContent = user.role;
-    if(imgEl) imgEl.src = user.avatar;
+    // if(imgEl) imgEl.src = user.avatar;
 }
 
 function initDropdowns() {
