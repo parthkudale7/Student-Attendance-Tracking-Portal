@@ -150,6 +150,21 @@ try {
                 $photo = $photoName;
             }
 
+            // Determine login password (provided or auto-generated default from employee_id or fallback)
+            $passwordPlain = !empty($_POST['password']) ? trim($_POST['password']) : (!empty($employee_id) ? $employee_id : 'Faculty@123');
+            $hashedPassword = password_hash($passwordPlain, PASSWORD_DEFAULT);
+
+            // Fetch department name/code for synced records
+            $deptName = 'CE';
+            try {
+                $deptStmt = $pdo->prepare("SELECT department_code, department_name FROM departments WHERE department_id = ?");
+                $deptStmt->execute([$department_id]);
+                $deptRow = $deptStmt->fetch();
+                if ($deptRow) {
+                    $deptName = !empty($deptRow['department_code']) ? $deptRow['department_code'] : $deptRow['department_name'];
+                }
+            } catch (Exception $e) {}
+
             if ($faculty_id) {
                 $sql = "UPDATE faculties SET 
                         employee_id = ?, full_name = ?, email = ?, phone = ?, department_id = ?, 
@@ -166,13 +181,98 @@ try {
 
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute($params);
-                echo json_encode(['status' => 'success', 'message' => 'Faculty details updated successfully!']);
+
+                // Update / Sync in attendance_db.users table
+                try {
+                    $userCheck = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                    $userCheck->execute([$email]);
+                    if ($userCheck->fetch()) {
+                        if (!empty($_POST['password'])) {
+                            $userUpdate = $pdo->prepare("UPDATE users SET name = ?, password = ?, role = 'faculty', status = ? WHERE email = ?");
+                            $userUpdate->execute([$full_name, $hashedPassword, $status, $email]);
+                        } else {
+                            $userUpdate = $pdo->prepare("UPDATE users SET name = ?, role = 'faculty', status = ? WHERE email = ?");
+                            $userUpdate->execute([$full_name, $status, $email]);
+                        }
+                    } else {
+                        $userInsert = $pdo->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'faculty', ?)");
+                        $userInsert->execute([$full_name, $email, $hashedPassword, $status]);
+                    }
+                } catch (Exception $e) {}
+
+                // Sync in faculty_attendance.Faculty table
+                try {
+                    $facDb = new PDO("mysql:host=" . DB_HOST . ";dbname=faculty_attendance;charset=utf8mb4", DB_USER, DB_PASS);
+                    $facDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+                    $facCheck = $facDb->prepare("SELECT faculty_id FROM Faculty WHERE email = ?");
+                    $facCheck->execute([$email]);
+                    if ($facCheck->fetch()) {
+                        $facUp = $facDb->prepare("UPDATE Faculty SET faculty_name = ?, department = ?, designation = ? WHERE email = ?");
+                        $facUp->execute([$full_name, $deptName, $designation, $email]);
+                    } else {
+                        $facIns = $facDb->prepare("INSERT INTO Faculty (faculty_name, email, password, department, designation) VALUES (?, ?, ?, ?, ?)");
+                        $facIns->execute([$full_name, $email, $passwordPlain, $deptName, $designation]);
+                    }
+                } catch (Exception $e) {}
+
+                echo json_encode([
+                    'status' => 'success', 
+                    'message' => 'Faculty details updated successfully!',
+                    'credentials' => [
+                        'name' => $full_name,
+                        'email' => $email,
+                        'password' => $passwordPlain,
+                        'role' => 'faculty',
+                        'employee_id' => $employee_id,
+                        'login_url' => '../auth/login.html?role=faculty'
+                    ]
+                ]);
             } else {
                 $sql = "INSERT INTO faculties (employee_id, full_name, email, phone, department_id, designation, qualification, joining_date, experience_years, photo, status) 
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([$employee_id, $full_name, $email, $phone, $department_id, $designation, $qualification, $joining_date, $experience_years, $photo, $status]);
-                echo json_encode(['status' => 'success', 'message' => 'Faculty member created successfully!']);
+
+                // Create / Sync login in attendance_db.users table
+                try {
+                    $userCheck = $pdo->prepare("SELECT id FROM users WHERE email = ?");
+                    $userCheck->execute([$email]);
+                    if ($userCheck->fetch()) {
+                        $userUpdate = $pdo->prepare("UPDATE users SET name = ?, password = ?, role = 'faculty', status = ? WHERE email = ?");
+                        $userUpdate->execute([$full_name, $hashedPassword, $status, $email]);
+                    } else {
+                        $userInsert = $pdo->prepare("INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, 'faculty', ?)");
+                        $userInsert->execute([$full_name, $email, $hashedPassword, $status]);
+                    }
+                } catch (Exception $e) {}
+
+                // Sync in faculty_attendance.Faculty table
+                try {
+                    $facDb = new PDO("mysql:host=" . DB_HOST . ";dbname=faculty_attendance;charset=utf8mb4", DB_USER, DB_PASS);
+                    $facDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_SILENT);
+                    $facCheck = $facDb->prepare("SELECT faculty_id FROM Faculty WHERE email = ?");
+                    $facCheck->execute([$email]);
+                    if ($facCheck->fetch()) {
+                        $facUp = $facDb->prepare("UPDATE Faculty SET faculty_name = ?, password = ?, department = ?, designation = ? WHERE email = ?");
+                        $facUp->execute([$full_name, $passwordPlain, $deptName, $designation, $email]);
+                    } else {
+                        $facIns = $facDb->prepare("INSERT INTO Faculty (faculty_name, email, password, department, designation) VALUES (?, ?, ?, ?, ?)");
+                        $facIns->execute([$full_name, $email, $passwordPlain, $deptName, $designation]);
+                    }
+                } catch (Exception $e) {}
+
+                echo json_encode([
+                    'status' => 'success', 
+                    'message' => 'Faculty member registered and login credentials generated successfully!',
+                    'credentials' => [
+                        'name' => $full_name,
+                        'email' => $email,
+                        'password' => $passwordPlain,
+                        'role' => 'faculty',
+                        'employee_id' => $employee_id,
+                        'login_url' => '../auth/login.html?role=faculty'
+                    ]
+                ]);
             }
             break;
 

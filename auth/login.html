@@ -224,6 +224,15 @@
             if(msg && typeof CyberToast !== 'undefined') {
                 CyberToast.show(msg, type);
             }
+
+            // Support prefilling email from query parameter
+            const emailParam = params.get('email');
+            if (emailParam) {
+                const emailInput = document.getElementById('emailInput');
+                if (emailInput) {
+                    emailInput.value = emailParam;
+                }
+            }
         });
 
         // Fix BFCache blank screen issue when using back button

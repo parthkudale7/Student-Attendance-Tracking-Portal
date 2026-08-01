@@ -199,11 +199,43 @@ require_once __DIR__ . '/../includes/sidebar.php';
                             <label for="photo" class="form-label">Profile Photo (Optional)</label>
                             <input type="file" class="form-control form-control-dark" id="photo" name="photo" accept="image/*">
                         </div>
+
+                        <!-- Auto-Generated Login Credentials Section -->
+                        <div class="col-12" id="facultyModalCredSection">
+                            <div class="p-3 rounded-3" style="background: rgba(13, 27, 62, 0.6); border: 1px solid rgba(79, 124, 255, 0.25);">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="text-white fw-bold mb-0">
+                                        <i class="fa-solid fa-key text-warning me-1"></i> Faculty Login Credentials
+                                    </h6>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-primary small text-decoration-none" id="btnModalGenPass">
+                                        <i class="fa-solid fa-rotate me-1"></i>Generate Password
+                                    </button>
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small mb-1">Login Email</label>
+                                        <input type="text" class="form-control form-control-dark form-control-sm" id="modal_display_email" readonly placeholder="Auto-synced with Email Address">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="modal_password" class="form-label text-secondary small mb-1">Password</label>
+                                        <div class="input-group input-group-sm">
+                                            <input type="password" class="form-control form-control-dark" id="modal_password" name="password" placeholder="Faculty@123 or Employee ID">
+                                            <button type="button" class="btn btn-outline-secondary border-opacity-50" id="btnModalTogglePass">
+                                                <i class="fa-solid fa-eye" id="modalEyeIcon"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-secondary small mt-2">
+                                    <i class="fa-solid fa-circle-info text-info me-1"></i> Role: <span class="badge bg-primary">Faculty</span>. An account will be automatically registered in the login system.
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn-primary-action btn-sm" id="btnSaveFaculty">Save Faculty</button>
+                    <button type="submit" class="btn-primary-action btn-sm" id="btnSaveFaculty">Save Faculty & Login</button>
                 </div>
             </form>
         </div>
@@ -230,10 +262,113 @@ require_once __DIR__ . '/../includes/sidebar.php';
     </div>
 </div>
 
+<!-- Faculty Credentials Success Modal -->
+<div class="modal fade" id="facultyCredModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-white" style="background: #0B1730; border: 1px solid #4F7CFF; box-shadow: 0 10px 35px rgba(0,0,0,0.6);">
+            <div class="modal-header border-bottom border-secondary border-opacity-25">
+                <h5 class="modal-title d-flex align-items-center">
+                    <i class="fa-solid fa-circle-check text-success me-2 fs-4"></i> Faculty Login Generated!
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-secondary small mb-3">Faculty account has been saved and credentials are ready for login.</p>
+                <div class="p-3 rounded-3 mb-3" style="background: rgba(8, 17, 31, 0.8); border: 1px solid rgba(79, 124, 255, 0.25);">
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                        <span class="text-secondary small">Faculty Name:</span>
+                        <span class="fw-bold text-white" id="modalCredName">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                        <span class="text-secondary small">Employee ID:</span>
+                        <span class="badge bg-secondary" id="modalCredEmpId">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom border-secondary border-opacity-25">
+                        <span class="text-secondary small">Role:</span>
+                        <span class="badge bg-primary">Faculty</span>
+                    </div>
+                    <div class="mb-3 pt-1">
+                        <label class="text-secondary small mb-1 d-flex justify-content-between">
+                            <span>Login Email:</span>
+                            <span class="text-primary small cursor-pointer" onclick="copyModalCred('modalCredEmailVal', 'Email copied!')">
+                                <i class="fa-solid fa-copy me-1"></i>Copy
+                            </span>
+                        </label>
+                        <input type="text" class="form-control form-control-dark form-control-sm bg-dark text-info fw-medium" id="modalCredEmailVal" readonly>
+                    </div>
+                    <div class="mb-1">
+                        <label class="text-secondary small mb-1 d-flex justify-content-between">
+                            <span>Password:</span>
+                            <span class="text-primary small cursor-pointer" onclick="copyModalCred('modalCredPassVal', 'Password copied!')">
+                                <i class="fa-solid fa-copy me-1"></i>Copy
+                            </span>
+                        </label>
+                        <input type="text" class="form-control form-control-dark form-control-sm bg-dark text-warning fw-medium" id="modalCredPassVal" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top border-secondary border-opacity-25 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                <a href="../auth/login.html?role=faculty" target="_blank" class="btn-primary-action btn-sm text-decoration-none" id="btnModalLoginFaculty">
+                    <i class="fa-solid fa-right-to-bracket me-1"></i> Login as Faculty
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
 
 <script>
+function copyModalCred(elementId, toastMsg) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.select();
+    navigator.clipboard.writeText(el.value).then(() => {
+        if (typeof showToast === 'function') {
+            showToast(toastMsg || 'Copied to clipboard!', 'success');
+        } else {
+            alert(toastMsg || 'Copied to clipboard!');
+        }
+    });
+}
+
 $(document).ready(function() {
+    // Sync email input -> modal_display_email
+    $('#email').on('input', function() {
+        $('#modal_display_email').val($(this).val());
+    });
+
+    // Auto-generate password helper
+    function genRandomPass() {
+        const adjectives = ['Prof', 'Tech', 'Edu', 'Univ', 'Acad', 'Lead'];
+        const symbols = ['@', '#', '$', '!'];
+        const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+        const sym = symbols[Math.floor(Math.random() * symbols.length)];
+        const num = Math.floor(100 + Math.random() * 900);
+        return `${adj}${sym}${num}`;
+    }
+
+    $('#btnModalGenPass').on('click', function() {
+        const p = genRandomPass();
+        $('#modal_password').val(p);
+        showToast('Generated password: ' + p, 'success');
+    });
+
+    $('#btnModalTogglePass').on('click', function() {
+        const pInput = document.getElementById('modal_password');
+        const eye = document.getElementById('modalEyeIcon');
+        if (pInput.type === 'password') {
+            pInput.type = 'text';
+            eye.classList.remove('fa-eye');
+            eye.classList.add('fa-eye-slash');
+        } else {
+            pInput.type = 'password';
+            eye.classList.remove('fa-eye-slash');
+            eye.classList.add('fa-eye');
+        }
+    });
+
     function loadDepts() {
         $.ajax({
             url: 'actions/allocation_actions.php?action=get_options',
@@ -408,6 +543,17 @@ $(document).ready(function() {
                     facultyModal.hide();
                     showToast(res.message, 'success');
                     facultyTable.ajax.reload(null, false);
+
+                    if (res.credentials && !$('#faculty_id').val()) {
+                        $('#modalCredName').text(res.credentials.name);
+                        $('#modalCredEmpId').text(res.credentials.employee_id);
+                        $('#modalCredEmailVal').val(res.credentials.email);
+                        $('#modalCredPassVal').val(res.credentials.password);
+                        $('#btnModalLoginFaculty').attr('href', `../auth/login.html?role=faculty&email=${encodeURIComponent(res.credentials.email)}`);
+                        
+                        const credModal = bootstrap.Modal.getOrCreateInstance(document.getElementById('facultyCredModal'));
+                        credModal.show();
+                    }
                 } else {
                     showAlert('Error', res.message, 'error');
                 }
