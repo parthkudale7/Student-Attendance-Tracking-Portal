@@ -133,75 +133,18 @@ check_auth(['faculty', 'admin']);
 
     <!-- Templates for different views -->
     
-    <!-- Student Management View -->
-    <template id="tpl-student-management">
-        <div class="view-content fade-in">
-            <div class="glass-card" style="margin-bottom: 20px;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3><i class="fa-solid fa-user-graduate"></i> Student Management</h3>
-                    <button class="btn btn-primary" onclick="openAddStudentModal()"><i class="fa-solid fa-plus"></i> Add Student</button>
-                </div>
-                <div class="filter-bar" style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
-                    <select class="glass-input" id="filter-dept" onchange="loadStudentManagement()">
-                        <option value="">All Departments</option>
-                        <option value="CE">CE</option>
-                        <option value="IT">IT</option>
-                        <option value="AIDS">AIDS</option>
-                        <option value="EE">EE</option>
-                        <option value="ME">ME</option>
-                    </select>
-                    <select class="glass-input" id="filter-sem" onchange="loadStudentManagement()">
-                        <option value="">All Semesters</option>
-                        <option value="Semester 1">Semester 1</option>
-                        <option value="Semester 2">Semester 2</option>
-                        <option value="Semester 3">Semester 3</option>
-                        <option value="Semester 4">Semester 4</option>
-                        <option value="Semester 5">Semester 5</option>
-                        <option value="Semester 6">Semester 6</option>
-                        <option value="Semester 7">Semester 7</option>
-                        <option value="Semester 8">Semester 8</option>
-                    </select>
-                    <select class="glass-input" id="filter-div" onchange="loadStudentManagement()">
-                        <option value="">All Divisions</option>
-                        <option value="Div A">Div A</option>
-                        <option value="Div B">Div B</option>
-                        <option value="Div C">Div C</option>
-                        <option value="Div D">Div D</option>
-                        <option value="Div E">Div E</option>
-                    </select>
-                    <input type="text" class="glass-input" id="filter-search" placeholder="Search by name or roll no..." oninput="loadStudentManagement()" style="flex: 1; min-width: 200px;">
-                </div>
-            </div>
-            
-            <div class="glass-card table-container">
-                <table class="table" style="width: 100%;">
-                    <thead>
-                        <tr>
-                            <th>Photo</th>
-                            <th>Roll No</th>
-                            <th>Student Name</th>
-                            <th>Dept</th>
-                            <th>Sem</th>
-                            <th>Div</th>
-                            <th>Attendance</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="student-management-list">
-                        <!-- Student list will be injected here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </template>
-
     <!-- 1. Dashboard View -->
     <template id="tpl-dashboard">
         <div class="view-content fade-in">
             <div class="welcome-banner glass-card">
                 <div class="banner-content">
-                    <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?>!</h2>
-                    <p>Here's an overview of your classes and attendance today.</p>
+                    <div style="margin-bottom: 8px;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; font-weight: 700; background: rgba(16, 185, 129, 0.15); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 20px;">
+                            <span style="width: 6px; height: 6px; background: #10B981; border-radius: 50%; display: inline-block;"></span> FACULTY PORTAL ACTIVE
+                        </span>
+                    </div>
+                    <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?>! 👋</h2>
+                    <p>Here is an overview of your academic schedules, attendance statistics, and pending validations for today.</p>
                 </div>
                 <div class="banner-image">
                     <i class="fa-solid fa-chalkboard-user"></i>
@@ -210,32 +153,36 @@ check_auth(['faculty', 'admin']);
 
             <div class="stats-grid">
                 <div class="stat-card glass-card">
-                    <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
                     <div class="stat-details">
-                        <div class="stat-value" id="dash-total-students">--</div>
                         <div class="stat-label">Total Students</div>
+                        <div class="stat-value" id="dash-total-students">--</div>
+                        <div class="stat-subtitle text-blue"><i class="fa-solid fa-graduation-cap"></i> Enrolled</div>
                     </div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-users"></i></div>
                 </div>
                 <div class="stat-card glass-card">
-                    <div class="stat-icon purple"><i class="fa-solid fa-clipboard-user"></i></div>
                     <div class="stat-details">
                         <div class="stat-value" id="dash-classes-today">--</div>
                         <div class="stat-label">Classes Today</div>
+                        <div class="stat-subtitle text-purple"><i class="fa-solid fa-calendar-day"></i> Scheduled</div>
                     </div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-clipboard-user"></i></div>
                 </div>
                 <div class="stat-card glass-card">
-                    <div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div>
                     <div class="stat-details">
-                        <div class="stat-value" id="dash-avg-attendance">--</div>
                         <div class="stat-label">Avg. Attendance</div>
+                        <div class="stat-value" id="dash-avg-attendance">--</div>
+                        <div class="stat-subtitle text-green"><i class="fa-solid fa-arrow-trend-up"></i> Present Rate</div>
                     </div>
+                    <div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div>
                 </div>
                 <div class="stat-card glass-card">
-                    <div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div>
                     <div class="stat-details">
-                        <div class="stat-value" id="dash-pending-validation">--</div>
                         <div class="stat-label">Pending Validation</div>
+                        <div class="stat-value" id="dash-pending-validation">--</div>
+                        <div class="stat-subtitle text-amber"><i class="fa-solid fa-clock"></i> Action Needed</div>
                     </div>
+                    <div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div>
                 </div>
             </div>
 
