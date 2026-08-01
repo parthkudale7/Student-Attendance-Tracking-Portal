@@ -49,6 +49,10 @@ check_auth(['faculty', 'admin']);
                     <i class="fa-solid fa-clipboard-check"></i>
                     <span>Attendance Validation</span>
                 </a>
+                <a href="#student-management" class="nav-item" data-view="student-management">
+                    <i class="fa-solid fa-user-graduate"></i>
+                    <span>Student Management</span>
+                </a>
                 <a href="#attendance-history" class="nav-item" data-view="attendance-history">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span>Attendance History</span>
@@ -129,6 +133,68 @@ check_auth(['faculty', 'admin']);
 
     <!-- Templates for different views -->
     
+    <!-- Student Management View -->
+    <template id="tpl-student-management">
+        <div class="view-content fade-in">
+            <div class="glass-card" style="margin-bottom: 20px;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3><i class="fa-solid fa-user-graduate"></i> Student Management</h3>
+                    <button class="btn btn-primary" onclick="openAddStudentModal()"><i class="fa-solid fa-plus"></i> Add Student</button>
+                </div>
+                <div class="filter-bar" style="display: flex; gap: 15px; margin-top: 15px; flex-wrap: wrap;">
+                    <select class="glass-input" id="filter-dept" onchange="loadStudentManagement()">
+                        <option value="">All Departments</option>
+                        <option value="CE">CE</option>
+                        <option value="IT">IT</option>
+                        <option value="AIDS">AIDS</option>
+                        <option value="EE">EE</option>
+                        <option value="ME">ME</option>
+                    </select>
+                    <select class="glass-input" id="filter-sem" onchange="loadStudentManagement()">
+                        <option value="">All Semesters</option>
+                        <option value="Semester 1">Semester 1</option>
+                        <option value="Semester 2">Semester 2</option>
+                        <option value="Semester 3">Semester 3</option>
+                        <option value="Semester 4">Semester 4</option>
+                        <option value="Semester 5">Semester 5</option>
+                        <option value="Semester 6">Semester 6</option>
+                        <option value="Semester 7">Semester 7</option>
+                        <option value="Semester 8">Semester 8</option>
+                    </select>
+                    <select class="glass-input" id="filter-div" onchange="loadStudentManagement()">
+                        <option value="">All Divisions</option>
+                        <option value="Div A">Div A</option>
+                        <option value="Div B">Div B</option>
+                        <option value="Div C">Div C</option>
+                        <option value="Div D">Div D</option>
+                        <option value="Div E">Div E</option>
+                    </select>
+                    <input type="text" class="glass-input" id="filter-search" placeholder="Search by name or roll no..." oninput="loadStudentManagement()" style="flex: 1; min-width: 200px;">
+                </div>
+            </div>
+            
+            <div class="glass-card table-container">
+                <table class="table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>Photo</th>
+                            <th>Roll No</th>
+                            <th>Student Name</th>
+                            <th>Dept</th>
+                            <th>Sem</th>
+                            <th>Div</th>
+                            <th>Attendance</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="student-management-list">
+                        <!-- Student list will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </template>
+
     <!-- 1. Dashboard View -->
     <template id="tpl-dashboard">
         <div class="view-content fade-in">
@@ -959,11 +1025,16 @@ check_auth(['faculty', 'admin']);
     <div class="modal-overlay" id="add-student-modal">
         <div class="modal-content glass-card" style="max-width: 600px;">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-user-plus"></i> Add New Student</h3>
+                <h3 id="student-modal-title"><i class="fa-solid fa-user-plus"></i> Add New Student</h3>
                 <button class="close-modal" onclick="closeAddStudentModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
-                <form id="add-student-form">
+                <form id="student-form">
+                    <input type="hidden" id="student-id" value="">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Profile Photo</label>
+                        <input type="file" class="glass-input w-100" id="new-student-photo" accept="image/*">
+                    </div>
                     <div class="form-group" style="margin-bottom: 15px;">
                         <label>Student Name</label>
                         <input type="text" class="glass-input w-100" id="new-student-name" required placeholder="e.g. John Doe">
@@ -1021,11 +1092,53 @@ check_auth(['faculty', 'admin']);
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closeAddStudentModal()">Cancel</button>
-                <button class="btn btn-primary" onclick="submitAddStudent()">Add Student</button>
+                <button class="btn btn-primary" id="save-student-btn" onclick="submitAddStudent()">Save Student</button>
             </div>
         </div>
     </div>
 
+    <!-- Student Profile Modal -->
+    <div class="modal-overlay" id="student-profile-modal">
+        <div class="modal-content glass-card" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-id-card"></i> Student Profile</h3>
+                <button class="close-modal" onclick="closeStudentProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <img id="profile-modal-photo" src="" alt="Profile" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary-light); margin-bottom: 15px;">
+                <h4 id="profile-modal-name" style="margin-bottom: 5px; font-size: 1.2rem;"></h4>
+                <p id="profile-modal-roll" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px;"></p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; background: var(--bg-card); padding: 15px; border-radius: 10px; border: 1px solid var(--border-color);">
+                    <div>
+                        <small style="color: var(--text-muted);">Department</small>
+                        <div id="profile-modal-dept" style="font-weight: 500;"></div>
+                    </div>
+                    <div>
+                        <small style="color: var(--text-muted);">Email</small>
+                        <div id="profile-modal-email" style="font-weight: 500; word-break: break-all;"></div>
+                    </div>
+                    <div>
+                        <small style="color: var(--text-muted);">Semester</small>
+                        <div id="profile-modal-sem" style="font-weight: 500;"></div>
+                    </div>
+                    <div>
+                        <small style="color: var(--text-muted);">Division</small>
+                        <div id="profile-modal-div" style="font-weight: 500;"></div>
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <small style="color: var(--text-muted);">Attendance</small>
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <div class="progress-bar" style="flex: 1; height: 8px; background: var(--border-color); border-radius: 4px; overflow: hidden;">
+                                <div id="profile-modal-attendance-bar" style="height: 100%; background: var(--primary-color); width: 0%;"></div>
+                            </div>
+                            <span id="profile-modal-attendance-text" style="font-weight: 500; font-size: 0.9rem;"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

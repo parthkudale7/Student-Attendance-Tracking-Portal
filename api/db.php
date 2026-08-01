@@ -36,7 +36,8 @@ try {
             student_name VARCHAR(100) NOT NULL,
             department VARCHAR(100) NOT NULL,
             semester VARCHAR(50) NOT NULL,
-            division VARCHAR(50) NOT NULL
+            division VARCHAR(50) NOT NULL,
+            profile_photo VARCHAR(255) DEFAULT 'default-avatar.png'
         )",
         "CREATE TABLE IF NOT EXISTS Subjects (
             subject_id INT AUTO_INCREMENT PRIMARY KEY,

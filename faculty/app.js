@@ -400,6 +400,7 @@ const pageTitles = {
     'daily-attendance': 'Daily Attendance Marking',
     'edit-attendance': 'Edit Attendance',
     'attendance-validation': 'Attendance Validation',
+    'student-management': 'Student Management',
     'attendance-history': 'Attendance History',
     'my-profile': 'My Profile',
     'edit-profile': 'Edit Profile',
@@ -441,6 +442,8 @@ function navigateTo(viewId) {
 function initViewLogic(viewId) {
     if (viewId === 'dashboard') {
         loadDashboardStats();
+    } else if (viewId === 'student-management') {
+        loadStudentManagement();
     } else if (viewId === 'daily-attendance') {
         const dateInput = document.getElementById('daily-date');
         if (dateInput) {
@@ -1862,9 +1865,12 @@ async function loadDashboardStats() {
     }
 }
 
-// --- Add Student Modal Logic ---
+// --- Student Management Logic ---
 function openAddStudentModal() {
-    document.getElementById('add-student-form').reset();
+    document.getElementById('student-form').reset();
+    document.getElementById('student-id').value = '';
+    document.getElementById('student-modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Add New Student';
+    document.getElementById('save-student-btn').textContent = 'Add Student';
     document.getElementById('add-student-modal').classList.add('show');
 }
 
@@ -1873,57 +1879,196 @@ function closeAddStudentModal() {
 }
 
 async function submitAddStudent() {
-    const form = document.getElementById('add-student-form');
+    const form = document.getElementById('student-form');
     if (!form.checkValidity()) {
         form.reportValidity();
         return;
     }
 
+    const id = document.getElementById('student-id').value;
     const name = document.getElementById('new-student-name').value;
     const roll = document.getElementById('new-student-roll').value;
     const email = document.getElementById('new-student-email').value;
     const dept = document.getElementById('new-student-dept').value;
     const sem = document.getElementById('new-student-sem').value;
     const div = document.getElementById('new-student-div').value;
+    const photoInput = document.getElementById('new-student-photo');
 
-    const btn = document.querySelector('#add-student-modal .btn-primary');
+    const btn = document.getElementById('save-student-btn');
     btn.disabled = true;
-    btn.textContent = 'Adding...';
+    btn.textContent = 'Saving...';
+
+    const formData = new FormData();
+    formData.append('action', id ? 'update' : 'create');
+    if (id) formData.append('student_id', id);
+    formData.append('name', name);
+    formData.append('roll', roll);
+    if (!id) formData.append('email', email); // only strictly needed on create
+    formData.append('dept', dept);
+    formData.append('sem', sem);
+    formData.append('div', div);
+    if (photoInput.files.length > 0) {
+        formData.append('photo', photoInput.files[0]);
+    }
 
     try {
-        const res = await fetch('../api/add_student.php', {
+        const res = await fetch('../api/students_crud.php', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: name,
-                roll: roll,
-                email: email,
-                dept: dept,
-                sem: sem,
-                div: div
-            })
+            body: formData
         });
 
         const data = await res.json();
         
         if (data.success) {
-            alert('Student added successfully! Login credentials have been generated.');
+            alert(data.message);
             closeAddStudentModal();
-            // Refresh stats if necessary
+            loadStudentManagement();
             if (typeof loadDashboardStats === 'function') {
                 loadDashboardStats();
             }
         } else {
-            alert(data.message || 'Failed to add student');
+            alert(data.message || 'Failed to save student');
         }
     } catch (err) {
         console.error(err);
-        alert('An error occurred while adding the student.');
+        alert('An error occurred while saving the student.');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Add Student';
+        btn.textContent = id ? 'Save Changes' : 'Add Student';
     }
+}
+
+async function loadStudentManagement() {
+    const dept = document.getElementById('filter-dept').value;
+    const sem = document.getElementById('filter-sem').value;
+    const div = document.getElementById('filter-div').value;
+    const search = document.getElementById('filter-search').value;
+    
+    const tbody = document.getElementById('student-management-list');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Loading students...</td></tr>';
+    
+    try {
+        const res = await fetch(`../api/students_crud.php?dept=${encodeURIComponent(dept)}&sem=${encodeURIComponent(sem)}&div=${encodeURIComponent(div)}&search=${encodeURIComponent(search)}`);
+        const result = await res.json();
+        
+        if (result.success) {
+            if (result.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-muted);">No students found.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = result.data.map(st => `
+                <tr>
+                    <td><img src="${st.profile_photo}" alt="${st.student_name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"></td>
+                    <td style="font-weight: 500;">${st.roll_no}</td>
+                    <td>${st.student_name}</td>
+                    <td><span class="status-badge" style="background: var(--primary-light); color: var(--primary);">${st.department}</span></td>
+                    <td>${st.semester}</td>
+                    <td>${st.division}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="progress-bar" style="flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; width: 60px;">
+                                <div style="height: 100%; width: ${st.attendance_percentage}%; background: ${st.attendance_percentage >= 75 ? 'var(--success)' : (st.attendance_percentage >= 60 ? 'var(--warning)' : 'var(--danger)')}"></div>
+                            </div>
+                            <span style="font-size: 0.85em; color: var(--text-secondary);">${st.attendance_percentage}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="viewStudentProfile(${st.student_id})" title="View Profile"><i class="fa-solid fa-eye" style="color: var(--primary);"></i></button>
+                            <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="editStudent(${st.student_id})" title="Edit"><i class="fa-solid fa-pen" style="color: var(--warning);"></i></button>
+                            <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="deleteStudent(${st.student_id}, '${st.student_name}')" title="Delete"><i class="fa-solid fa-trash" style="color: var(--danger);"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (err) {
+        console.error('Error loading students:', err);
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--danger);">Failed to load students.</td></tr>';
+    }
+}
+
+async function editStudent(id) {
+    try {
+        const res = await fetch(`../api/students_crud.php?action=get&id=${id}`);
+        const result = await res.json();
+        
+        if (result.success) {
+            const st = result.data;
+            document.getElementById('student-id').value = st.student_id;
+            document.getElementById('new-student-name').value = st.student_name;
+            document.getElementById('new-student-roll').value = st.roll_no;
+            document.getElementById('new-student-email').value = st.email || '';
+            document.getElementById('new-student-dept').value = st.department;
+            document.getElementById('new-student-sem').value = st.semester;
+            document.getElementById('new-student-div').value = st.division;
+            document.getElementById('new-student-photo').value = '';
+            
+            document.getElementById('student-modal-title').innerHTML = '<i class="fa-solid fa-user-pen"></i> Edit Student';
+            document.getElementById('save-student-btn').textContent = 'Save Changes';
+            document.getElementById('add-student-modal').classList.add('show');
+        }
+    } catch (err) {
+        console.error('Error fetching student details:', err);
+        alert('Could not load student details.');
+    }
+}
+
+async function deleteStudent(id, name) {
+    if (!confirm(`Are you sure you want to delete ${name}?\n\nThis will also remove all their attendance records and login access. This action cannot be undone.`)) {
+        return;
+    }
+    
+    try {
+        const res = await fetch(`../api/students_crud.php?action=delete&student_id=${id}`, {
+            method: 'POST'
+        });
+        const result = await res.json();
+        
+        if (result.success) {
+            alert('Student deleted successfully.');
+            loadStudentManagement();
+        } else {
+            alert(result.message || 'Failed to delete student.');
+        }
+    } catch (err) {
+        console.error('Error deleting student:', err);
+        alert('An error occurred while deleting the student.');
+    }
+}
+
+async function viewStudentProfile(id) {
+    try {
+        const res = await fetch(`../api/students_crud.php?action=get&id=${id}`);
+        const result = await res.json();
+        
+        if (result.success) {
+            const st = result.data;
+            document.getElementById('profile-modal-photo').src = st.profile_photo;
+            document.getElementById('profile-modal-name').textContent = st.student_name;
+            document.getElementById('profile-modal-roll').textContent = st.roll_no;
+            document.getElementById('profile-modal-dept').textContent = st.department;
+            document.getElementById('profile-modal-email').textContent = st.email || '-';
+            document.getElementById('profile-modal-sem').textContent = st.semester;
+            document.getElementById('profile-modal-div').textContent = st.division;
+            
+            const bar = document.getElementById('profile-modal-attendance-bar');
+            bar.style.width = st.attendance_percentage + '%';
+            bar.style.background = st.attendance_percentage >= 75 ? 'var(--success)' : (st.attendance_percentage >= 60 ? 'var(--warning)' : 'var(--danger)');
+            document.getElementById('profile-modal-attendance-text').textContent = st.attendance_percentage + '%';
+            
+            document.getElementById('student-profile-modal').classList.add('show');
+        }
+    } catch (err) {
+        console.error('Error fetching student profile:', err);
+        alert('Could not load student profile.');
+    }
+}
+
+function closeStudentProfileModal() {
+    document.getElementById('student-profile-modal').classList.remove('show');
 }
 
