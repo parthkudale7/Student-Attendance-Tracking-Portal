@@ -114,7 +114,14 @@ $isFacultyActive = in_array($activeNav, ['faculty', 'faculty_registration', 'fac
             </div>
         </li>
         
-        <li class="sidebar-menu-item mt-4">
+        <li class="sidebar-menu-item mt-2">
+            <a href="../auth/face_setup.php" class="sidebar-menu-link text-info">
+                <i class="fa-solid fa-camera"></i>
+                <span>Register Face ID</span>
+            </a>
+        </li>
+        
+        <li class="sidebar-menu-item mt-2">
             <a href="#" class="sidebar-menu-link text-danger" data-bs-toggle="modal" data-bs-target="#logoutModal">
                 <i class="fa-solid fa-right-from-bracket"></i>
                 <span>Logout</span>

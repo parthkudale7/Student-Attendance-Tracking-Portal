@@ -53,7 +53,7 @@
                         </div>
                         <div class="col-6">
                             <label for="admin_designation" class="form-label">Designation</label>
-                            <input type="text" class="form-control form-control-dark" id="admin_designation" name="admin_designation" value="System Administrator" required>
+                            <input type="text" class="form-control form-control-dark" id="admin_designation" name="admin_designation" value="<?php echo htmlspecialchars($_SESSION['user_designation'] ?? 'System Administrator', ENT_QUOTES, 'UTF-8'); ?>" required>
                         </div>
                     </div>
 

@@ -7,7 +7,7 @@ window.historyLogic = (function() {
     
     async function loadRecords() {
         try {
-            const API_BASE = window.location.protocol === 'file:' ? 'http://localhost/Student-Attendance-Tracking-Portal-/api/index.php' : 'api/index.php';
+            const API_BASE = '../api/index.php';
             
             // Fetch master data first
             if (!masterData) {

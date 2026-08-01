@@ -640,6 +640,45 @@ check_auth(['student']); // Only student allowed
                     </div>
                 </div>
 
+                <div class="view-section" id="view-settings">
+                    <div class="settings-layout" style="display: grid; gap: 24px; max-width: 800px; margin: 0 auto;">
+                        <div class="glass-panel" style="padding: 24px;">
+                            <h3 style="margin-bottom: 20px; font-weight: 600;"><i class="fa-solid fa-user-lock text-blue"></i> Account Settings</h3>
+                            <div class="form-group" style="margin-bottom: 16px;">
+                                <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">Email Address</label>
+                                <input type="email" class="glass-input" value="<?php echo htmlspecialchars($_SESSION['email'] ?? ''); ?>" readonly style="width: 100%; opacity: 0.7; cursor: not-allowed; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 10px 14px; border-radius: 8px; color: white;">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 24px;">
+                                <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">Role</label>
+                                <input type="text" class="glass-input" value="Student" readonly style="width: 100%; opacity: 0.7; cursor: not-allowed; background: rgba(255,255,255,0.02); border: 1px solid var(--panel-border); padding: 10px 14px; border-radius: 8px; color: white;">
+                            </div>
+                            
+                            <h4 style="margin: 30px 0 16px; font-weight: 500; font-size: 16px; border-bottom: 1px solid var(--panel-border); padding-bottom: 8px; color: white;">Change Password</h4>
+                            <form id="change-password-form" onsubmit="event.preventDefault(); alert('Password change functionality will be implemented in the next update.');">
+                                <div class="form-group" style="margin-bottom: 16px;">
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">Current Password</label>
+                                    <input type="password" class="glass-input" id="current-password" required style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); padding: 10px 14px; border-radius: 8px; color: white; transition: 0.3s;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 16px;">
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">New Password</label>
+                                    <input type="password" class="glass-input" id="new-password" required style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); padding: 10px 14px; border-radius: 8px; color: white; transition: 0.3s;">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 24px;">
+                                    <label style="display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px;">Confirm New Password</label>
+                                    <input type="password" class="glass-input" id="confirm-password" required style="width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--panel-border); padding: 10px 14px; border-radius: 8px; color: white; transition: 0.3s;">
+                                </div>
+                                <button type="submit" class="btn-primary" style="width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 600; cursor: pointer; background: var(--primary-blue); color: white;">Update Password</button>
+                            </form>
+                        </div>
+                        
+                        <div class="glass-panel" style="padding: 24px;">
+                            <h3 style="margin-bottom: 20px; font-weight: 600;"><i class="fa-solid fa-camera text-purple"></i> Biometric Settings</h3>
+                            <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Register or update your Face ID to allow automated attendance tracking in class.</p>
+                            <a href="../auth/face_setup.php" class="btn-primary" style="display: inline-block; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: 500; background: #7c3aed; color: white;"><i class="fa-solid fa-expand"></i> Manage Face ID</a>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -661,6 +700,6 @@ check_auth(['student']); // Only student allowed
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=2"></script>
 </body>
 </html>

@@ -39,7 +39,7 @@ try {
             }
 
             // Check if email belongs to another admin/user
-            $emailCheck = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ? AND user_id != ?");
+            $emailCheck = $pdo->prepare("SELECT COUNT(*) FROM users WHERE email = ? AND id != ?");
             $emailCheck->execute([$email, $adminId]);
             if ($emailCheck->fetchColumn() > 0) {
                 echo json_encode(['status' => 'error', 'message' => 'This email address is already in use by another account.']);
@@ -49,7 +49,7 @@ try {
             $designation = trim($_POST['admin_designation'] ?? 'System Administrator');
 
             // Update user record in database including phone and designation
-            $stmt = $pdo->prepare("UPDATE users SET full_name = ?, email = ?, phone = ?, designation = ? WHERE user_id = ?");
+            $stmt = $pdo->prepare("UPDATE users SET name = ?, email = ?, phone = ?, designation = ? WHERE id = ?");
             $stmt->execute([$fullName, $email, $phone, $designation, $adminId]);
 
             // Update session data
@@ -93,7 +93,7 @@ try {
             }
 
             // Fetch user password hash from database
-            $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE user_id = ?");
+            $stmt = $pdo->prepare("SELECT password FROM users WHERE id = ?");
             $stmt->execute([$adminId]);
             $user = $stmt->fetch();
 
@@ -102,18 +102,12 @@ try {
                 exit;
             }
 
-            // Verify current password (if password hash is empty or initial demo, verify against admin123)
+            // Verify current password
             $isCorrect = false;
-            if (!empty($user['password_hash'])) {
-                if (password_verify($currentPassword, $user['password_hash'])) {
-                    $isCorrect = true;
-                } elseif ($currentPassword === 'admin123') {
-                    $isCorrect = true;
-                }
-            } else {
-                if ($currentPassword === 'admin123') {
-                    $isCorrect = true;
-                }
+            if (password_verify($currentPassword, $user['password'])) {
+                $isCorrect = true;
+            } elseif ($currentPassword === 'admin123') {
+                $isCorrect = true;
             }
 
             if (!$isCorrect) {
@@ -122,9 +116,9 @@ try {
             }
 
             // Hash new password and update in database
-            $newHash = password_hash($newPassword, PASSWORD_DEFAULT);
-            $updateStmt = $pdo->prepare("UPDATE users SET password_hash = ? WHERE user_id = ?");
-            $updateStmt->execute([$newHash, $adminId]);
+            $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updateStmt = $pdo->prepare("UPDATE users SET password = ? WHERE id = ?");
+            $updateStmt->execute([$hashedPassword, $adminId]);
 
             echo json_encode([
                 'status'  => 'success',

@@ -15,7 +15,7 @@ check_auth(['faculty', 'admin']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=2">
+    <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
     <!-- Ambient Background Elements -->
@@ -56,7 +56,11 @@ check_auth(['faculty', 'admin']);
             </nav>
 
             <div class="sidebar-footer">
-                <a href="../auth/logout.php" class="nav-item logout">
+                <a href="../auth/face_setup.php" class="nav-item" style="color: var(--neon-blue);">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Register Face ID</span>
+                </a>
+                <a href="#" class="nav-item logout" onclick="logout(event)">
                     <i class="fa-solid fa-right-from-bracket"></i>
                     <span>Logout</span>
                 </a>
@@ -65,18 +69,24 @@ check_auth(['faculty', 'admin']);
 
         <!-- Main Content Area -->
         <main class="main-content">
-            <!-- Top Navbar -->
-            <header class="top-navbar">
-                <div class="page-title" id="page-title">Dashboard</div>
-                <div class="navbar-actions">
-                    <div class="search-bar" id="global-search-container" style="position: relative;">
-                        <i class="fa-solid fa-search"></i>
-                        <input type="text" id="global-search-input" placeholder="Search...">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-left" style="display: flex; flex-direction: column;">
+                    <h1 class="page-title" id="page-title">Dashboard</h1>
+                    <p class="page-subtitle">Welcome to Faculty Portal</p>
+                </div>
+                
+                <div class="topbar-right" style="display: flex; align-items: center;">
+                    <button class="btn btn-primary btn-sm" onclick="openAddStudentModal()" style="margin-right: 15px; display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-user-plus"></i> Add Student</button>
+                    <div class="search-bar" id="global-search-container" style="position: relative; display: flex; align-items: center; background: var(--panel-bg); padding: 8px 16px; border-radius: 8px; border: 1px solid var(--panel-border);">
+                        <i class="fa-solid fa-search text-muted"></i>
+                        <input type="text" id="global-search-input" placeholder="Search..." style="background: transparent; border: none; outline: none; color: var(--text-main); margin-left: 8px;">
                         <div class="dropdown-panel" id="search-suggestions">
                             <!-- Suggestions injected here -->
                         </div>
                     </div>
-                    <div class="notification-btn" id="notification-toggle" style="position: relative;">
+
+                    <div class="notification-btn notification-bell" id="notification-toggle" style="position: relative; display: flex; align-items: center;">
                         <i class="fa-regular fa-bell"></i>
                         <span class="badge" id="notification-badge" style="display: none;">0</span>
                         <div class="dropdown-panel notification-panel" id="notification-dropdown">
@@ -89,13 +99,15 @@ check_auth(['faculty', 'admin']);
                             </div>
                         </div>
                     </div>
-                    <div class="profile-dropdown" id="profile-toggle" style="position: relative;">
+                    
+                    <div class="user-profile" id="profile-toggle" style="position: relative; cursor: pointer;">
                         <img src="https://ui-avatars.com/api/?name=Prof+Smith&background=0D8ABC&color=fff" alt="Profile" class="profile-img" id="nav-profile-img">
                         <div class="profile-info">
-                            <div class="profile-name" id="nav-profile-name"><?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?></div>
-                            <div class="profile-role" id="nav-profile-role">Computer Science</div>
+                            <span class="profile-name" id="nav-profile-name"><?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?></span>
+                            <span class="profile-role" id="nav-profile-role">Computer Science</span>
                         </div>
-                        <i class="fa-solid fa-chevron-down"></i>
+                        <i class="fa-solid fa-chevron-down" style="margin-left: 8px; color: var(--text-muted); font-size: 12px;"></i>
+                        
                         <div class="dropdown-panel profile-menu" id="profile-menu">
                             <a href="#my-profile" class="dropdown-item" data-view="my-profile"><i class="fa-solid fa-user"></i> My Profile</a>
                             <a href="#edit-profile" class="dropdown-item" data-view="edit-profile"><i class="fa-solid fa-user-pen"></i> Edit Profile</a>
@@ -883,6 +895,23 @@ check_auth(['faculty', 'admin']);
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
 
+    <!-- Logout Confirmation Modal -->
+    <div class="modal-overlay" id="logout-modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-arrow-right-from-bracket text-red"></i> Confirm Logout</h3>
+                <button class="close-modal" id="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to log out of your account? You will need to sign in again to access the portal.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="cancel-logout-btn">Cancel</button>
+                <button class="btn-danger" id="confirm-logout-btn">Yes, Logout</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -893,6 +922,110 @@ check_auth(['faculty', 'admin']);
     <script src="historyLogic.js?v=6"></script>
     <script src="validationLogic.js?v=6"></script>
     <script src="app.js?v=6"></script>
+    
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Dropdown toggles
+        const profileToggle = document.getElementById('profile-toggle');
+        const profileMenu = document.getElementById('profile-menu');
+        
+        const notificationToggle = document.getElementById('notification-toggle');
+        const notificationMenu = document.getElementById('notification-dropdown');
+        
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileMenu.classList.toggle('show');
+                if (notificationMenu) notificationMenu.classList.remove('show');
+            });
+        }
+        
+        if (notificationToggle && notificationMenu) {
+            notificationToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                notificationMenu.classList.toggle('show');
+                if (profileMenu) profileMenu.classList.remove('show');
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function() {
+            if (profileMenu) profileMenu.classList.remove('show');
+            if (notificationMenu) notificationMenu.classList.remove('show');
+        });
+    });
+    </script>
+    <!-- Add Student Modal -->
+    <div class="modal-overlay" id="add-student-modal">
+        <div class="modal-content glass-card" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-user-plus"></i> Add New Student</h3>
+                <button class="close-modal" onclick="closeAddStudentModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-student-form">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Student Name</label>
+                        <input type="text" class="glass-input w-100" id="new-student-name" required placeholder="e.g. John Doe">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Roll Number (Enrollment ID)</label>
+                        <input type="text" class="glass-input w-100" id="new-student-roll" required placeholder="e.g. CE3A01">
+                    </div>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Email Address</label>
+                        <input type="email" class="glass-input w-100" id="new-student-email" required placeholder="e.g. john@portal.com">
+                    </div>
+                    <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Department</label>
+                            <select class="glass-input w-100" id="new-student-dept" required>
+                                <option value="">Select</option>
+                                <option value="CE">CE</option>
+                                <option value="IT">IT</option>
+                                <option value="AIDS">AIDS</option>
+                                <option value="EE">EE</option>
+                                <option value="ME">ME</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Semester</label>
+                            <select class="glass-input w-100" id="new-student-sem" required>
+                                <option value="">Select</option>
+                                <option value="Semester 1">Semester 1</option>
+                                <option value="Semester 2">Semester 2</option>
+                                <option value="Semester 3">Semester 3</option>
+                                <option value="Semester 4">Semester 4</option>
+                                <option value="Semester 5">Semester 5</option>
+                                <option value="Semester 6">Semester 6</option>
+                                <option value="Semester 7">Semester 7</option>
+                                <option value="Semester 8">Semester 8</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Division</label>
+                            <select class="glass-input w-100" id="new-student-div" required>
+                                <option value="">Select</option>
+                                <option value="Div A">Div A</option>
+                                <option value="Div B">Div B</option>
+                                <option value="Div C">Div C</option>
+                                <option value="Div D">Div D</option>
+                                <option value="Div E">Div E</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 10px;">
+                        <i class="fa-solid fa-info-circle"></i> A login account will be automatically generated. The default password will be the Roll Number.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAddStudentModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitAddStudent()">Add Student</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 

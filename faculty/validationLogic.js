@@ -2,7 +2,7 @@
 
 window.fetchValidationRecords = async () => {
     // Fetch all validation records directly
-    let url = `${API_BASE}?request=validation-list&status=All`;
+    let url = `../api/index.php?request=validation-list&status=All`;
     
     try {
         const res = await fetch(url, { cache: 'no-store' });
@@ -177,7 +177,7 @@ window.submitValidation = async (mode, action, singleId = null) => {
     if (ids.length === 0) return;
     
     try {
-        const res = await fetch(`${API_BASE}?request=validate-attendance`, {
+        const res = await fetch(`../api/index.php?request=validate-attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ids, action })

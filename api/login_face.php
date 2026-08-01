@@ -36,8 +36,20 @@ function euclidean_distance($a, $b) {
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE role = ? AND status = 'active' AND face_descriptor IS NOT NULL");
-    $stmt->execute([$role]);
+    try {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE role = ? AND status = 'active' AND face_descriptor IS NOT NULL");
+        $stmt->execute([$role]);
+    } catch (PDOException $e) {
+        // If the column doesn't exist, try to add it and then execute again
+        if (strpos($e->getMessage(), 'Unknown column') !== false) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN face_descriptor TEXT DEFAULT NULL");
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE role = ? AND status = 'active' AND face_descriptor IS NOT NULL");
+            $stmt->execute([$role]);
+        } else {
+            throw $e;
+        }
+    }
+    
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($users)) {

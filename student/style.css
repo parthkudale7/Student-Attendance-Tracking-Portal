@@ -1,4 +1,4 @@
-﻿/* CSS Variables */
+/* CSS Variables */
 :root {
     --bg-dark: #0a0e17; /* Deep Navy Blue */
     --panel-bg: rgba(16, 25, 43, 0.6); /* Glassmorphism Panel */
@@ -1081,4 +1081,71 @@ body {
     color: white;
 }
 .btn-danger:hover { filter: brightness(1.1); box-shadow: 0 0 10px var(--accent-red-glow); }
+
+/* --- Super Admin Theme Ambient Glow Animation --- */
+
+.ambient-glow {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(120px);
+    z-index: -1;
+    pointer-events: none;
+    animation: pulse-glow 15s infinite alternate ease-in-out;
+}
+
+.glow-1 {
+    top: -100px;
+    left: -200px;
+    background: rgba(79, 124, 255, 0.08); /* Primary Blue */
+}
+
+.glow-2 {
+    bottom: -200px;
+    right: -100px;
+    background: rgba(99, 102, 241, 0.06); /* Indigo */
+    animation-delay: -7s;
+}
+
+.glow-3 {
+    top: 40%;
+    left: 30%;
+    background: rgba(16, 185, 129, 0.03); /* Faint Green */
+    animation-delay: -3s;
+}
+
+@keyframes pulse-glow {
+  0% { transform: scale(1) translate(0, 0); opacity: 0.8; }
+  50% { transform: scale(1.2) translate(50px, -30px); opacity: 1; }
+  100% { transform: scale(0.9) translate(-20px, 40px); opacity: 0.7; }
+}
+
+/* --- Super Admin Hover Animations --- */
+.nav-item:hover, .dropdown-item:hover {
+  background: linear-gradient(90deg, rgba(30, 41, 59, 0.8) 0%, rgba(79, 124, 255, 0.25) 100%) !important;
+  color: #FFFFFF !important;
+  border-color: #4F7CFF !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+
+.nav-item.logout:hover, .dropdown-item.text-danger:hover {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #EF4444 !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.2) !important;
+  border-color: transparent !important;
+}
+
+.stat-card:hover, .glass-card:hover, .glass-panel:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(79, 124, 255, 0.15) !important;
+  border-color: rgba(79, 124, 255, 0.35) !important;
+}
+
+.btn:hover, .btn-primary:hover, .btn-sm:hover, button:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 22px rgba(79, 124, 255, 0.4) !important;
+}
 

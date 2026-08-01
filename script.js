@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
             confirmLogoutBtn.addEventListener('click', () => {
                 // Redirect to a login page (we'll just reload the dashboard or go to a placeholder login.html)
                 // For demonstration, since we don't have a backend, we will just redirect to index.html with a query param
-                window.location.href = 'index.html?logged_out=true';
+                window.location.href = 'auth/logout.php';
             });
         }
     }

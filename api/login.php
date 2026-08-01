@@ -36,21 +36,28 @@ try {
         exit;
     }
 
-    if ($user['status'] !== 'active') {
-        echo json_encode(['success' => false, 'message' => 'Account is inactive.']);
-        exit;
-    }
-
     // Authentication successful
     session_start();
     $_SESSION['user_id'] = $user['id'];
     $_SESSION['name'] = $user['name'];
     $_SESSION['role'] = $user['role'];
     $_SESSION['email'] = $user['email'];
+    
+    // Set session variables used by admin UI
+    $_SESSION['user_name'] = $user['name'];
+    $_SESSION['user_email'] = $user['email'];
+    $_SESSION['user_phone'] = $user['phone'] ?? '';
+    $_SESSION['user_designation'] = $user['designation'] ?? 'System Administrator';
+
+    // Determine redirect folder based on role
+    $folder = strtolower(str_replace(' ', '_', $user['role']));
+    if ($folder === 'super_admin' || $folder === 'admin') {
+        $folder = 'admin';
+    }
 
     echo json_encode([
         'success' => true,
-        'redirect' => "../{$user['role']}/dashboard.php",
+        'redirect' => "../{$folder}/dashboard.php",
         'user' => [
             'id' => $user['id'],
             'name' => $user['name'],

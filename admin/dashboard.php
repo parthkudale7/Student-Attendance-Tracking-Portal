@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $pageTitle = "Admin Dashboard";
 $activeNav = "dashboard";
 require_once __DIR__ . '/../includes/header.php';
@@ -33,7 +33,7 @@ require_once __DIR__ . '/../includes/sidebar.php';
                         <span class="text-primary font-weight-bold" style="font-size: 0.78rem; letter-spacing: 0.5px;">SYSTEM OPERATIONAL</span>
                     </div>
                     <h3 class="text-white fw-bold mb-1" style="letter-spacing: -0.4px;">
-                        <span id="dynamicGreeting">Good Morning ≡ƒæï</span>, Super Admin
+                        <span id="dynamicGreeting">Good Morning 👋</span>, Super Admin
                     </h3>
                     <p class="small mb-0" style="color: #CBD5E1; font-weight: 500;">Hope you're having a productive day. Here's today's attendance & allocation summary.</p>
                 </div>

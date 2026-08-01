@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     // 1. Navigation Logic (SPA)
     const navItems = document.querySelectorAll('.nav-item[data-target]');
     const viewSections = document.querySelectorAll('.view-section');
@@ -21,7 +21,7 @@
             
             // Update Topbar Title
             if(targetId === 'view-dashboard') {
-                topbarTitle.innerHTML = 'Good Morning, Parth Kudale <span class="emoji">≡ƒæï</span>';
+                topbarTitle.innerHTML = 'Good Morning, Parth Kudale <span class="emoji">👋</span>';
                 topbarSubtitle.textContent = 'Welcome back to your dashboard';
             } else {
                 topbarTitle.textContent = targetTitle;
@@ -379,7 +379,7 @@
             confirmLogoutBtn.addEventListener('click', () => {
                 // Redirect to a login page (we'll just reload the dashboard or go to a placeholder login.html)
                 // For demonstration, since we don't have a backend, we will just redirect to index.html with a query param
-                window.location.href = 'index.html?logged_out=true';
+                window.location.href = '../auth/logout.php';
             });
         }
     }

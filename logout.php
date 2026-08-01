@@ -7,5 +7,9 @@ session_start();
 session_unset();
 session_destroy();
 
-header("Location: login.php");
+// Clear browser sessionStorage and redirect to index.php
+echo "<script>
+    sessionStorage.removeItem('user_session');
+    window.location.href = 'index.php';
+</script>";
 exit;

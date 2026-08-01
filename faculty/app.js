@@ -1,5 +1,5 @@
 // app.js
-const API_BASE = window.location.protocol === 'file:' ? 'http://localhost/Student-Attendance-Tracking-Portal-/api/index.php' : '../api/index.php';
+const API_BASE = '../api/index.php';
 
 const commonSem1 = [
     '107001 - Engineering Mathematics-I',
@@ -428,7 +428,7 @@ function navigateTo(viewId) {
         if (currentUser) {
             // Update Welcome Banner if it exists in this view
             const welcomeTitle = container.querySelector('.welcome-banner h2');
-            // if (welcomeTitle) welcomeTitle.textContent = `Welcome back, ${currentUser.name}!`; // Commented out to use PHP name
+            if (welcomeTitle) welcomeTitle.textContent = `Welcome back, ${currentUser.name}!`;
 
             // Dynamic subject population is now handled in initViewLogic for each view
         }
@@ -892,9 +892,9 @@ function updateTopNavProfile() {
     const roleEl = document.getElementById('nav-profile-role');
     const imgEl = document.getElementById('nav-profile-img');
     
-    // if(nameEl) nameEl.textContent = user.name;
+    if(nameEl) nameEl.textContent = user.name;
     if(roleEl) roleEl.textContent = user.role;
-    // if(imgEl) imgEl.src = user.avatar;
+    if(imgEl) imgEl.src = user.avatar;
 }
 
 function initDropdowns() {
@@ -1778,15 +1778,44 @@ window.changePassword = function(e) {
 
 window.logout = function(e) {
     if (e) e.preventDefault();
-    
-    // Clear stored data
-    localStorage.removeItem('currentUser');
-    localStorage.removeItem('attendanceHistory');
-    localStorage.removeItem('notifications');
-    
-    // Redirect to login
-    window.location.href = 'login.php';
+    const logoutModal = document.getElementById('logout-modal');
+    if (logoutModal) {
+        logoutModal.classList.add('active');
+    }
 }
+
+// Setup logout modal listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const logoutModal = document.getElementById('logout-modal');
+    const closeModalBtn = document.getElementById('close-modal-btn');
+    const cancelLogoutBtn = document.getElementById('cancel-logout-btn');
+    const confirmLogoutBtn = document.getElementById('confirm-logout-btn');
+
+    if (logoutModal) {
+        const closeLogoutModal = () => logoutModal.classList.remove('active');
+        
+        if (closeModalBtn) closeModalBtn.addEventListener('click', closeLogoutModal);
+        if (cancelLogoutBtn) cancelLogoutBtn.addEventListener('click', closeLogoutModal);
+        
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) {
+                closeLogoutModal();
+            }
+        });
+
+        if (confirmLogoutBtn) {
+            confirmLogoutBtn.addEventListener('click', () => {
+                // Clear stored data
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('attendanceHistory');
+                localStorage.removeItem('notifications');
+                
+                // Redirect to logout script
+                window.location.href = '../auth/logout.php';
+            });
+        }
+    }
+});
 
 async function loadDashboardStats() {
     try {
@@ -1832,3 +1861,69 @@ async function loadDashboardStats() {
         console.error('Error fetching dashboard stats:', err);
     }
 }
+
+// --- Add Student Modal Logic ---
+function openAddStudentModal() {
+    document.getElementById('add-student-form').reset();
+    document.getElementById('add-student-modal').classList.add('show');
+}
+
+function closeAddStudentModal() {
+    document.getElementById('add-student-modal').classList.remove('show');
+}
+
+async function submitAddStudent() {
+    const form = document.getElementById('add-student-form');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+
+    const name = document.getElementById('new-student-name').value;
+    const roll = document.getElementById('new-student-roll').value;
+    const email = document.getElementById('new-student-email').value;
+    const dept = document.getElementById('new-student-dept').value;
+    const sem = document.getElementById('new-student-sem').value;
+    const div = document.getElementById('new-student-div').value;
+
+    const btn = document.querySelector('#add-student-modal .btn-primary');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+
+    try {
+        const res = await fetch('../api/add_student.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                roll: roll,
+                email: email,
+                dept: dept,
+                sem: sem,
+                div: div
+            })
+        });
+
+        const data = await res.json();
+        
+        if (data.success) {
+            alert('Student added successfully! Login credentials have been generated.');
+            closeAddStudentModal();
+            // Refresh stats if necessary
+            if (typeof loadDashboardStats === 'function') {
+                loadDashboardStats();
+            }
+        } else {
+            alert(data.message || 'Failed to add student');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('An error occurred while adding the student.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Add Student';
+    }
+}
+

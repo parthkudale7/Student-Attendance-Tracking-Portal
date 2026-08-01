@@ -30,8 +30,18 @@ if (!$data || !isset($data['descriptor'])) {
 $descriptor_json = json_encode($data['descriptor']);
 
 try {
-    $stmt = $pdo->prepare("UPDATE users SET face_descriptor = ? WHERE id = ?");
-    $stmt->execute([$descriptor_json, $_SESSION['user_id']]);
+    try {
+        $stmt = $pdo->prepare("UPDATE users SET face_descriptor = ? WHERE id = ?");
+        $stmt->execute([$descriptor_json, $_SESSION['user_id']]);
+    } catch (PDOException $e) {
+        if (strpos($e->getMessage(), 'Unknown column') !== false) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN face_descriptor TEXT DEFAULT NULL");
+            $stmt = $pdo->prepare("UPDATE users SET face_descriptor = ? WHERE id = ?");
+            $stmt->execute([$descriptor_json, $_SESSION['user_id']]);
+        } else {
+            throw $e;
+        }
+    }
     
     echo json_encode(['success' => true, 'message' => 'Face ID registered successfully.']);
 } catch (PDOException $e) {
