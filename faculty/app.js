@@ -1867,36 +1867,44 @@ async function loadDashboardStats() {
 
 // --- Student Management Logic ---
 function openAddStudentModal() {
-    document.getElementById('student-form').reset();
-    document.getElementById('student-id').value = '';
-    document.getElementById('student-modal-title').innerHTML = '<i class="fa-solid fa-user-plus"></i> Add New Student';
-    document.getElementById('save-student-btn').textContent = 'Add Student';
-    document.getElementById('add-student-modal').classList.add('show');
+    const form = document.getElementById('student-form') || document.getElementById('add-student-form');
+    if (form) form.reset();
+    const idEl = document.getElementById('student-id');
+    if (idEl) idEl.value = '';
+    const titleEl = document.getElementById('student-modal-title');
+    if (titleEl) titleEl.innerHTML = '<i class="fa-solid fa-user-plus"></i> Add New Student';
+    const btnEl = document.getElementById('save-student-btn');
+    if (btnEl) btnEl.textContent = 'Add Student';
+    const modal = document.getElementById('add-student-modal');
+    if (modal) modal.classList.add('show');
 }
 
 function closeAddStudentModal() {
-    document.getElementById('add-student-modal').classList.remove('show');
+    const modal = document.getElementById('add-student-modal');
+    if (modal) modal.classList.remove('show');
 }
 
 async function submitAddStudent() {
-    const form = document.getElementById('student-form');
-    if (!form.checkValidity()) {
+    const form = document.getElementById('student-form') || document.getElementById('add-student-form');
+    if (form && !form.checkValidity()) {
         form.reportValidity();
         return;
     }
 
-    const id = document.getElementById('student-id').value;
-    const name = document.getElementById('new-student-name').value;
-    const roll = document.getElementById('new-student-roll').value;
-    const email = document.getElementById('new-student-email').value;
-    const dept = document.getElementById('new-student-dept').value;
-    const sem = document.getElementById('new-student-sem').value;
-    const div = document.getElementById('new-student-div').value;
+    const id = document.getElementById('student-id')?.value || '';
+    const name = document.getElementById('new-student-name')?.value || '';
+    const roll = document.getElementById('new-student-roll')?.value || '';
+    const email = document.getElementById('new-student-email')?.value || '';
+    const dept = document.getElementById('new-student-dept')?.value || '';
+    const sem = document.getElementById('new-student-sem')?.value || '';
+    const div = document.getElementById('new-student-div')?.value || '';
     const photoInput = document.getElementById('new-student-photo');
 
     const btn = document.getElementById('save-student-btn');
-    btn.disabled = true;
-    btn.textContent = 'Saving...';
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+    }
 
     const formData = new FormData();
     formData.append('action', id ? 'update' : 'create');
@@ -1907,7 +1915,7 @@ async function submitAddStudent() {
     formData.append('dept', dept);
     formData.append('sem', sem);
     formData.append('div', div);
-    if (photoInput.files.length > 0) {
+    if (photoInput && photoInput.files.length > 0) {
         formData.append('photo', photoInput.files[0]);
     }
 
@@ -1933,16 +1941,18 @@ async function submitAddStudent() {
         console.error(err);
         alert('An error occurred while saving the student.');
     } finally {
-        btn.disabled = false;
-        btn.textContent = id ? 'Save Changes' : 'Add Student';
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = id ? 'Save Changes' : 'Add Student';
+        }
     }
 }
 
 async function loadStudentManagement() {
-    const dept = document.getElementById('filter-dept').value;
-    const sem = document.getElementById('filter-sem').value;
-    const div = document.getElementById('filter-div').value;
-    const search = document.getElementById('filter-search').value;
+    const dept = document.getElementById('filter-dept')?.value || '';
+    const sem = document.getElementById('filter-sem')?.value || '';
+    const div = document.getElementById('filter-div')?.value || '';
+    const search = document.getElementById('filter-search')?.value || '';
     
     const tbody = document.getElementById('student-management-list');
     if (!tbody) return;
@@ -1976,7 +1986,7 @@ async function loadStudentManagement() {
                         </div>
                     </td>
                     <td>
-                        <div style="display: flex; gap: 8px;">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
                             <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="viewStudentProfile(${st.student_id})" title="View Profile"><i class="fa-solid fa-eye" style="color: var(--primary);"></i></button>
                             <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="editStudent(${st.student_id})" title="Edit"><i class="fa-solid fa-pen" style="color: var(--warning);"></i></button>
                             <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="deleteStudent(${st.student_id}, '${st.student_name}')" title="Delete"><i class="fa-solid fa-trash" style="color: var(--danger);"></i></button>
@@ -2056,9 +2066,12 @@ async function viewStudentProfile(id) {
             document.getElementById('profile-modal-div').textContent = st.division;
             
             const bar = document.getElementById('profile-modal-attendance-bar');
-            bar.style.width = st.attendance_percentage + '%';
-            bar.style.background = st.attendance_percentage >= 75 ? 'var(--success)' : (st.attendance_percentage >= 60 ? 'var(--warning)' : 'var(--danger)');
-            document.getElementById('profile-modal-attendance-text').textContent = st.attendance_percentage + '%';
+            if (bar) {
+                bar.style.width = st.attendance_percentage + '%';
+                bar.style.background = st.attendance_percentage >= 75 ? 'var(--success)' : (st.attendance_percentage >= 60 ? 'var(--warning)' : 'var(--danger)');
+            }
+            const textEl = document.getElementById('profile-modal-attendance-text');
+            if (textEl) textEl.textContent = st.attendance_percentage + '%';
             
             document.getElementById('student-profile-modal').classList.add('show');
         }
@@ -2069,6 +2082,18 @@ async function viewStudentProfile(id) {
 }
 
 function closeStudentProfileModal() {
-    document.getElementById('student-profile-modal').classList.remove('show');
+    const modal = document.getElementById('student-profile-modal');
+    if (modal) modal.classList.remove('show');
 }
+
+// Global window bindings to guarantee accessibility in HTML inline event handlers
+window.openAddStudentModal = openAddStudentModal;
+window.closeAddStudentModal = closeAddStudentModal;
+window.submitAddStudent = submitAddStudent;
+window.loadStudentManagement = loadStudentManagement;
+window.editStudent = editStudent;
+window.deleteStudent = deleteStudent;
+window.viewStudentProfile = viewStudentProfile;
+window.closeStudentProfileModal = closeStudentProfileModal;
+
 

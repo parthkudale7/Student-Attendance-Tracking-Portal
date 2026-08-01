@@ -15,7 +15,7 @@ check_auth(['faculty', 'admin']);
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
 </head>
 <body>
     <!-- Ambient Background Elements -->
@@ -651,6 +651,93 @@ check_auth(['faculty', 'admin']);
         </div>
     </template>
 
+    <!-- 4.5. Student Management View -->
+    <template id="tpl-student-management">
+        <div class="view-content fade-in" style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h2 class="view-title">Student Management</h2>
+                    <p class="view-subtitle" style="color: var(--text-secondary);">Manage student profiles, search, filter and view attendance stats</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="openAddStudentModal()"><i class="fa-solid fa-user-plus"></i> Add New Student</button>
+                </div>
+            </div>
+
+            <!-- Filters & Search Bar -->
+            <div class="filters-card glass-card" style="padding: 20px; border-radius: 12px;">
+                <div class="filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+                    <div class="form-group mb-0">
+                        <label>Department</label>
+                        <select class="glass-input" id="filter-dept" onchange="loadStudentManagement()">
+                            <option value="">All Departments</option>
+                            <option value="CE">CE - Computer Engineering</option>
+                            <option value="AIDS">AIDS - AI & Data Science</option>
+                            <option value="EE">EE - Electrical Engineering</option>
+                            <option value="BT">BT - Biotechnology</option>
+                            <option value="ME">ME - Mechanical Engineering</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Semester</label>
+                        <select class="glass-input" id="filter-sem" onchange="loadStudentManagement()">
+                            <option value="">All Semesters</option>
+                            <option value="Semester 1">Semester 1</option>
+                            <option value="Semester 2">Semester 2</option>
+                            <option value="Semester 3">Semester 3</option>
+                            <option value="Semester 4">Semester 4</option>
+                            <option value="Semester 5">Semester 5</option>
+                            <option value="Semester 6">Semester 6</option>
+                            <option value="Semester 7">Semester 7</option>
+                            <option value="Semester 8">Semester 8</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Division</label>
+                        <select class="glass-input" id="filter-div" onchange="loadStudentManagement()">
+                            <option value="">All Divisions</option>
+                            <option value="Div A">Div A</option>
+                            <option value="Div B">Div B</option>
+                            <option value="Div C">Div C</option>
+                            <option value="Div D">Div D</option>
+                            <option value="Div E">Div E</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Search Student</label>
+                        <input type="text" class="glass-input" id="filter-search" placeholder="Search by name or roll..." oninput="loadStudentManagement()">
+                    </div>
+                    <div class="form-group mb-0">
+                        <button class="btn btn-outline w-100" onclick="document.getElementById('filter-dept').value='';document.getElementById('filter-sem').value='';document.getElementById('filter-div').value='';document.getElementById('filter-search').value='';loadStudentManagement();"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student List Table -->
+            <div class="glass-card" style="padding: 0; overflow: hidden; border-radius: 12px;">
+                <div class="table-responsive">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 60px;">Photo</th>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Department</th>
+                                <th>Semester</th>
+                                <th>Division</th>
+                                <th>Attendance %</th>
+                                <th style="width: 140px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-management-list">
+                            <!-- Student rows dynamically rendered -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- 5. Attendance History View -->
     <template id="tpl-attendance-history">
         <div class="view-content fade-in attendance-history-page" style="display: flex; flex-direction: column; gap: 24px;">
@@ -985,9 +1072,9 @@ check_auth(['faculty', 'admin']);
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <!-- App Logic -->
-    <script src="historyLogic.js?v=6"></script>
-    <script src="validationLogic.js?v=6"></script>
-    <script src="app.js?v=6"></script>
+    <script src="historyLogic.js?v=<?php echo time(); ?>"></script>
+    <script src="validationLogic.js?v=<?php echo time(); ?>"></script>
+    <script src="app.js?v=<?php echo time(); ?>"></script>
     
     <script>
     document.addEventListener('DOMContentLoaded', function() {
