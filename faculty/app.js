@@ -491,41 +491,7 @@ function initViewLogic(viewId) {
     } else if (viewId === 'low-attendance') {
         initLowAttendanceView();
     } else if (viewId === 'daily-attendance') {
-        const dateInput = document.getElementById('daily-date');
-        if (dateInput) {
-            dateInput.value = new Date().toISOString().split('T')[0];
-        }
-
-        const deptSelect = document.getElementById('daily-dept');
-        const semSelect = document.getElementById('daily-sem');
-        const subjectSelect = document.getElementById('daily-subject');
-
-        const updateSubjects = () => {
-            if (!subjectSelect) return;
-            const dept = deptSelect ? deptSelect.value : '';
-            const sem = semSelect ? semSelect.value : '';
-            
-            if (dept && sem && dept !== "" && sem !== "") {
-                subjectSelect.innerHTML = '<option value="">Select Subject</option>';
-                if (subjectData[dept] && subjectData[dept][sem]) {
-                    subjectData[dept][sem].forEach(sub => {
-                        const option = document.createElement('option');
-                        option.value = sub;
-                        option.textContent = sub;
-                        subjectSelect.appendChild(option);
-                    });
-                }
-                subjectSelect.disabled = false;
-            } else {
-                subjectSelect.innerHTML = '<option value="">Select Department and Semester First</option>';
-                subjectSelect.disabled = true;
-            }
-        };
-
-        updateSubjects();
-
-        if (deptSelect) deptSelect.addEventListener('change', updateSubjects);
-        if (semSelect) semSelect.addEventListener('change', updateSubjects);
+        initDailyAttendanceView();
     }
     
     if (viewId === 'attendance-history') {
@@ -643,127 +609,332 @@ function initViewLogic(viewId) {
     }
 }
 
-// --- Daily Attendance Logic ---
+// ==========================================================================
+// 2. DAILY ATTENDANCE LOGIC & CONTROLS
+// ==========================================================================
+
+function initDailyAttendanceView() {
+    const dateInput = document.getElementById('daily-date');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    const deptSelect = document.getElementById('daily-dept');
+    const semSelect = document.getElementById('daily-sem');
+    const divSelect = document.getElementById('daily-div');
+    const lectSelect = document.getElementById('daily-lecture');
+
+    if (currentUser && currentUser.department && deptSelect) {
+        // Match user department if option exists
+        for (let opt of deptSelect.options) {
+            if (opt.value === currentUser.department) {
+                deptSelect.value = currentUser.department;
+                break;
+            }
+        }
+    }
+    if (deptSelect && !deptSelect.value) deptSelect.value = 'CE';
+    if (semSelect && !semSelect.value) semSelect.value = 'Semester 3';
+    if (divSelect && !divSelect.value) divSelect.value = 'Div A';
+    if (lectSelect && !lectSelect.value) lectSelect.value = 'Lecture 1';
+
+    updateDailySubjects();
+
+    if (deptSelect) deptSelect.onchange = updateDailySubjects;
+    if (semSelect) semSelect.onchange = updateDailySubjects;
+}
+
+function updateDailySubjects() {
+    const deptSelect = document.getElementById('daily-dept');
+    const semSelect = document.getElementById('daily-sem');
+    const subjectSelect = document.getElementById('daily-subject');
+    if (!subjectSelect) return;
+
+    const dept = deptSelect ? deptSelect.value : '';
+    const sem = semSelect ? semSelect.value : '';
+
+    if (dept && sem && subjectData && subjectData[dept] && subjectData[dept][sem]) {
+        subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+        const subjects = subjectData[dept][sem];
+        subjects.forEach((sub, idx) => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            if (idx === 0) opt.selected = true; // Pre-select first subject by default
+            subjectSelect.appendChild(opt);
+        });
+        subjectSelect.disabled = false;
+    } else {
+        subjectSelect.innerHTML = '<option value="">Select Department and Semester First</option>';
+        subjectSelect.disabled = true;
+    }
+}
+
+function resetDailyAttendanceFilters() {
+    const dateInput = document.getElementById('daily-date');
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+    const deptSelect = document.getElementById('daily-dept');
+    const semSelect = document.getElementById('daily-sem');
+    const divSelect = document.getElementById('daily-div');
+    const lectSelect = document.getElementById('daily-lecture');
+
+    if (deptSelect) deptSelect.value = (currentUser && currentUser.department) ? currentUser.department : 'CE';
+    if (semSelect) semSelect.value = 'Semester 3';
+    if (divSelect) divSelect.value = 'Div A';
+    if (lectSelect) lectSelect.value = 'Lecture 1';
+
+    updateDailySubjects();
+
+    const container = document.getElementById('student-list-container');
+    if (container) container.style.display = 'none';
+
+    const searchInput = document.getElementById('attendance-search-input');
+    if (searchInput) searchInput.value = '';
+
+    showToast('Daily attendance filters reset to defaults', 'info');
+}
+
 async function loadStudents() {
-    const dept = document.getElementById('daily-dept').value;
-    const sem = document.getElementById('daily-sem').value;
-    const div = document.getElementById('daily-div').value;
-    
-    if(!dept || !sem || !div) {
+    const date = document.getElementById('daily-date') ? document.getElementById('daily-date').value : '';
+    const dept = document.getElementById('daily-dept') ? document.getElementById('daily-dept').value : '';
+    const sem = document.getElementById('daily-sem') ? document.getElementById('daily-sem').value : '';
+    const div = document.getElementById('daily-div') ? document.getElementById('daily-div').value : '';
+    const subject = document.getElementById('daily-subject') ? document.getElementById('daily-subject').value : '';
+    const lecture = document.getElementById('daily-lecture') ? document.getElementById('daily-lecture').value : '';
+
+    if (!dept || !sem || !div) {
         showToast('Please select Department, Semester, and Division', 'error');
         return;
     }
-    
+    if (!subject) {
+        showToast('Please select a Subject for this lecture', 'error');
+        return;
+    }
+
     try {
+        showToast('Fetching enrolled students roster...', 'info');
         const res = await fetch(`${API_BASE}?request=students&dept=${encodeURIComponent(dept)}&sem=${encodeURIComponent(sem)}&div=${encodeURIComponent(div)}`, { cache: 'no-store' });
-        
+
         let responseData;
         const contentType = res.headers.get("content-type");
         if (contentType && contentType.indexOf("application/json") !== -1) {
             responseData = await res.json();
-            console.log('Exact API Response:', responseData);
         } else {
             const text = await res.text();
-            console.log('Exact API Response:', text);
             throw new Error(`Invalid API response: ${text.substring(0, 50)}...`);
         }
-        
+
         if (!res.ok) {
             throw new Error(responseData.error || `HTTP Error: ${res.status}`);
         }
-        
+
         if (responseData.error) {
             throw new Error(responseData.error);
         }
-        
-        const students = responseData;
-        
+
+        const students = Array.isArray(responseData) ? responseData : (responseData.data || []);
+
         const container = document.getElementById('student-list-container');
         const tbody = document.getElementById('attendance-tbody');
-        
+        const badgeContainer = document.getElementById('active-session-badge');
+
+        if (!tbody || !container) return;
+
         tbody.innerHTML = '';
-        
+
         if (!Array.isArray(students) || students.length === 0) {
-            showToast('No students found for this class', 'warning');
+            showToast('No students found for ' + dept + ' ' + sem + ' ' + div, 'warning');
             container.style.display = 'none';
             return;
         }
-        
-        students.forEach(student => {
+
+        // Populate session summary badges
+        if (badgeContainer) {
+            badgeContainer.innerHTML = `
+                <span class="badge" style="background: rgba(79, 124, 255, 0.15); color: #93C5FD; border: 1px solid rgba(79, 124, 255, 0.3); padding: 4px 10px; border-radius: 6px;">
+                    <i class="fa-solid fa-calendar-day"></i> ${date || 'Today'}
+                </span>
+                <span class="badge" style="background: rgba(79, 124, 255, 0.15); color: #93C5FD; border: 1px solid rgba(79, 124, 255, 0.3); padding: 4px 10px; border-radius: 6px;">
+                    <i class="fa-solid fa-building-columns"></i> ${dept} &bull; ${sem} &bull; ${div}
+                </span>
+                <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.3); padding: 4px 10px; border-radius: 6px;">
+                    <i class="fa-solid fa-book-open"></i> ${subject}
+                </span>
+                <span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #FCD34D; border: 1px solid rgba(245, 158, 11, 0.3); padding: 4px 10px; border-radius: 6px;">
+                    <i class="fa-solid fa-clock"></i> ${lecture}
+                </span>
+            `;
+        }
+
+        // Render Student Rows with Status Buttons & Remarks
+        students.forEach((student, index) => {
+            const roll = student.roll || student.roll_no || `R${index + 1}`;
+            const name = student.name || student.student_name || 'Student';
+            const initial = name.charAt(0).toUpperCase();
+
             const tr = document.createElement('tr');
+            tr.dataset.roll = roll;
+            tr.dataset.name = name.toLowerCase();
+
             tr.innerHTML = `
-                <td>${student.roll}</td>
+                <td style="font-weight: 700; color: #FFFFFF; font-family: monospace; font-size: 0.95rem;">${roll}</td>
                 <td>
                     <div class="student-info">
-                        <div class="student-avatar">${student.name.charAt(0)}</div>
-                        <span>${student.name}</span>
+                        <div class="student-avatar">${initial}</div>
+                        <span>${name}</span>
                     </div>
                 </td>
                 <td>
-                    <div class="switch-container">
-                        <button class="switch-btn active present" onclick="toggleStatus(this, 'present')">Present</button>
-                        <button class="switch-btn" onclick="toggleStatus(this, 'absent')">Absent</button>
-                        <button class="switch-btn" onclick="toggleStatus(this, 'late')">Late</button>
-                        <button class="switch-btn" onclick="toggleStatus(this, 'leave')">Leave</button>
+                    <div class="switch-container" data-roll="${roll}">
+                        <button type="button" class="switch-btn active present" onclick="toggleStatus(this, 'present')">
+                            <i class="fa-solid fa-check"></i> Present
+                        </button>
+                        <button type="button" class="switch-btn" onclick="toggleStatus(this, 'absent')">
+                            <i class="fa-solid fa-xmark"></i> Absent
+                        </button>
+                        <button type="button" class="switch-btn" onclick="toggleStatus(this, 'late')">
+                            <i class="fa-solid fa-clock"></i> Late
+                        </button>
+                        <button type="button" class="switch-btn" onclick="toggleStatus(this, 'leave')">
+                            <i class="fa-solid fa-plane-departure"></i> Leave
+                        </button>
                     </div>
                 </td>
                 <td>
-                    <input type="text" class="glass-input" style="padding: 6px 12px; width: 150px;" placeholder="Optional remark">
+                    <input type="text" class="glass-input remark-input" style="padding: 7px 12px; width: 100%; max-width: 220px; font-size: 0.85rem;" placeholder="Optional remark (e.g. medical, sports)...">
                 </td>
             `;
             tbody.appendChild(tr);
         });
-        
+
         container.style.display = 'block';
         container.classList.add('fade-in');
-        
-        showToast('Students loaded successfully', 'success');
+
+        // Reset search input
+        const searchInput = document.getElementById('attendance-search-input');
+        if (searchInput) searchInput.value = '';
+
+        updateLiveAttendanceCounters();
+
+        showToast(`Loaded ${students.length} students successfully`, 'success');
     } catch(err) {
-        showToast(err.message, 'error');
+        showToast(err.message || 'Failed to load students roster', 'error');
         console.error('Student fetch error:', err);
     }
 }
 
 function toggleStatus(btn, status) {
-    const container = btn.parentElement;
+    const container = btn.closest('.switch-container');
+    if (!container) return;
+
     const buttons = container.querySelectorAll('.switch-btn');
-    
     buttons.forEach(b => {
         b.classList.remove('active', 'present', 'absent', 'late', 'leave');
     });
-    
+
     btn.classList.add('active', status);
+    updateLiveAttendanceCounters();
 }
 
 function markBulk(status) {
-    const switches = document.querySelectorAll('.switch-container');
+    const switches = document.querySelectorAll('#attendance-tbody .switch-container');
+    if (switches.length === 0) {
+        showToast('No student records loaded to mark', 'warning');
+        return;
+    }
+
     switches.forEach(container => {
         const buttons = container.querySelectorAll('.switch-btn');
         buttons.forEach(b => b.classList.remove('active', 'present', 'absent', 'late', 'leave'));
-        
-        if (status === 'present') {
-            container.children[0].classList.add('active', 'present');
-        } else if (status === 'absent') {
-            container.children[1].classList.add('active', 'absent');
+
+        const targetBtn = Array.from(buttons).find(b => {
+            const text = b.textContent.trim().toLowerCase();
+            return text.includes(status.toLowerCase());
+        });
+
+        if (targetBtn) {
+            targetBtn.classList.add('active', status);
+        }
+    });
+
+    updateLiveAttendanceCounters();
+    const statusLabels = { present: 'Present', absent: 'Absent', late: 'Late', leave: 'Leave' };
+    showToast(`Marked all ${switches.length} students as ${statusLabels[status] || status}`, 'info');
+}
+
+function updateLiveAttendanceCounters() {
+    const rows = document.querySelectorAll('#attendance-tbody tr');
+    const total = rows.length;
+
+    let present = 0;
+    let absent = 0;
+    let late = 0;
+    let leave = 0;
+
+    rows.forEach(tr => {
+        const activeBtn = tr.querySelector('.switch-btn.active');
+        if (!activeBtn) return;
+
+        if (activeBtn.classList.contains('present')) present++;
+        else if (activeBtn.classList.contains('absent')) absent++;
+        else if (activeBtn.classList.contains('late')) late++;
+        else if (activeBtn.classList.contains('leave')) leave++;
+    });
+
+    const totalEl = document.getElementById('counter-total');
+    const presentEl = document.getElementById('counter-present');
+    const absentEl = document.getElementById('counter-absent');
+    const lateEl = document.getElementById('counter-late');
+    const leaveEl = document.getElementById('counter-leave');
+    const rateEl = document.getElementById('counter-rate');
+    const statusEl = document.getElementById('attendance-save-status');
+
+    if (totalEl) totalEl.textContent = total;
+    if (presentEl) presentEl.textContent = present;
+    if (absentEl) absentEl.textContent = absent;
+    if (lateEl) lateEl.textContent = late;
+    if (leaveEl) leaveEl.textContent = leave;
+
+    const rate = total > 0 ? (((present + late) / total) * 100).toFixed(1) : '0.0';
+    if (rateEl) rateEl.textContent = `${rate}%`;
+
+    if (statusEl) {
+        statusEl.innerHTML = `<strong>${total}</strong> Students enrolled &bull; Present: <strong style="color:#10B981">${present}</strong> &bull; Absent: <strong style="color:#EF4444">${absent}</strong> &bull; Late: <strong style="color:#F59E0B">${late}</strong>`;
+    }
+}
+
+function filterAttendanceStudentRows(query) {
+    const term = (query || '').trim().toLowerCase();
+    const rows = document.querySelectorAll('#attendance-tbody tr');
+
+    rows.forEach(tr => {
+        const roll = (tr.dataset.roll || '').toLowerCase();
+        const name = (tr.dataset.name || '').toLowerCase();
+
+        if (!term || roll.includes(term) || name.includes(term)) {
+            tr.style.display = '';
+        } else {
+            tr.style.display = 'none';
         }
     });
 }
 
 async function saveAttendance() {
-    const date = document.getElementById('daily-date').value;
-    const dept = document.getElementById('daily-dept').value;
-    const sem = document.getElementById('daily-sem').value;
-    const div = document.getElementById('daily-div').value;
-    const subject = document.getElementById('daily-subject').value;
-    const lecture = document.getElementById('daily-lecture').value;
+    const date = document.getElementById('daily-date') ? document.getElementById('daily-date').value : '';
+    const dept = document.getElementById('daily-dept') ? document.getElementById('daily-dept').value : '';
+    const sem = document.getElementById('daily-sem') ? document.getElementById('daily-sem').value : '';
+    const div = document.getElementById('daily-div') ? document.getElementById('daily-div').value : '';
+    const subject = document.getElementById('daily-subject') ? document.getElementById('daily-subject').value : '';
+    const lecture = document.getElementById('daily-lecture') ? document.getElementById('daily-lecture').value : '';
 
     if (!date || !dept || !sem || !div || !subject || !lecture) {
-        showToast('Please fill all fields before saving', 'error');
+        showToast('Please fill all academic and session fields before saving', 'error');
         return;
     }
 
     const tbody = document.getElementById('attendance-tbody');
-    const rows = tbody.querySelectorAll('tr');
+    const rows = tbody ? tbody.querySelectorAll('tr') : [];
     if (rows.length === 0) {
         showToast('No students loaded to mark attendance', 'error');
         return;
@@ -773,7 +944,7 @@ async function saveAttendance() {
     const remarksData = {};
 
     rows.forEach(tr => {
-        const roll = tr.cells[0].textContent;
+        const roll = tr.dataset.roll || tr.cells[0].textContent.trim();
         const activeBtn = tr.querySelector('.switch-btn.active');
         const status = activeBtn ? (
             activeBtn.classList.contains('present') ? 'present' :
@@ -782,8 +953,8 @@ async function saveAttendance() {
             activeBtn.classList.contains('leave') ? 'on leave' : 'absent'
         ) : 'absent';
         
-        const remarkInput = tr.querySelector('input[type="text"]');
-        const remark = remarkInput ? remarkInput.value : '';
+        const remarkInput = tr.querySelector('input.remark-input') || tr.querySelector('input[type="text"]');
+        const remark = remarkInput ? remarkInput.value.trim() : '';
 
         attendanceData[roll] = status;
         if (remark) remarksData[roll] = remark;
@@ -796,7 +967,7 @@ async function saveAttendance() {
     };
 
     try {
-        showToast('Saving attendance...', 'info');
+        showToast('Submitting attendance records to database...', 'info');
         const res = await fetch(`${API_BASE}?request=attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -805,9 +976,13 @@ async function saveAttendance() {
         const result = await res.json();
         
         if (res.ok && result.success) {
-            showToast('Attendance saved successfully!', 'success');
+            showToast('Attendance recorded and saved successfully!', 'success');
+            const statusEl = document.getElementById('attendance-save-status');
+            if (statusEl) {
+                statusEl.innerHTML = `<span style="color: #10B981;"><i class="fa-solid fa-circle-check"></i> Attendance saved at ${new Date().toLocaleTimeString()}</span>`;
+            }
         } else {
-            showToast(result.error || 'Failed to save attendance', 'error');
+            showToast(result.error || 'Failed to save attendance records', 'error');
         }
     } catch(err) {
         showToast('Network error while saving attendance', 'error');

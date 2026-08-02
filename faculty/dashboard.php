@@ -293,17 +293,32 @@ if (!empty($facultyEmail)) {
     <!-- 2. Daily Attendance View -->
     <template id="tpl-daily-attendance">
         <div class="view-content fade-in">
+            <!-- Filter & Class Selection Card -->
             <div class="filters-card glass-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+                    <div>
+                        <h4 style="margin: 0; color: #FFFFFF; font-size: 1.05rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-sliders" style="color: var(--primary-blue);"></i> Daily Attendance Configuration
+                        </h4>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary);">Select the academic parameters and session details to mark attendance</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" class="btn btn-sm btn-secondary" onclick="resetDailyAttendanceFilters()">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
                 <div class="filters-grid">
                     <div class="form-group">
-                        <label>Date</label>
+                        <label><i class="fa-solid fa-calendar-day" style="color: var(--primary-blue); margin-right: 4px;"></i> Date</label>
                         <input type="date" class="glass-input" id="daily-date">
                     </div>
                     <div class="form-group">
-                        <label>Department</label>
+                        <label><i class="fa-solid fa-building-columns" style="color: var(--primary-blue); margin-right: 4px;"></i> Department</label>
                         <select class="glass-input" id="daily-dept">
                             <option value="">Select Department</option>
-                            <option value="CE">CE - Computer Engineering</option>
+                            <option value="CE" selected>CE - Computer Engineering</option>
                             <option value="AIDS">AIDS - AI & Data Science</option>
                             <option value="EE">EE - Electrical Engineering</option>
                             <option value="BT">BT - Biotechnology</option>
@@ -311,12 +326,12 @@ if (!empty($facultyEmail)) {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Semester</label>
+                        <label><i class="fa-solid fa-graduation-cap" style="color: var(--primary-blue); margin-right: 4px;"></i> Semester</label>
                         <select class="glass-input" id="daily-sem">
                             <option value="">Select Semester</option>
                             <option value="Semester 1">Semester 1</option>
                             <option value="Semester 2">Semester 2</option>
-                            <option value="Semester 3">Semester 3</option>
+                            <option value="Semester 3" selected>Semester 3</option>
                             <option value="Semester 4">Semester 4</option>
                             <option value="Semester 5">Semester 5</option>
                             <option value="Semester 6">Semester 6</option>
@@ -325,10 +340,10 @@ if (!empty($facultyEmail)) {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Division</label>
+                        <label><i class="fa-solid fa-users" style="color: var(--primary-blue); margin-right: 4px;"></i> Division</label>
                         <select class="glass-input" id="daily-div">
                             <option value="">Select Division</option>
-                            <option value="Div A">Div A</option>
+                            <option value="Div A" selected>Div A</option>
                             <option value="Div B">Div B</option>
                             <option value="Div C">Div C</option>
                             <option value="Div D">Div D</option>
@@ -336,44 +351,84 @@ if (!empty($facultyEmail)) {
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Subject</label>
+                        <label><i class="fa-solid fa-book-open" style="color: var(--primary-blue); margin-right: 4px;"></i> Subject</label>
                         <select class="glass-input" id="daily-subject" data-populate="subjects">
                             <option value="">Select Subject</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Lecture Number</label>
+                        <label><i class="fa-solid fa-clock" style="color: var(--primary-blue); margin-right: 4px;"></i> Lecture / Session</label>
                         <select class="glass-input" id="daily-lecture">
                             <option value="">Select Lecture</option>
-                            <option value="Lecture 1">Lecture 1</option>
-                            <option value="Lecture 2">Lecture 2</option>
-                            <option value="Lecture 3 (Practical)">Lecture 3 (Practical)</option>
-                            <option value="Lecture 4">Lecture 4</option>
-                            <option value="Lecture 5 (Practical)">Lecture 5 (Practical)</option>
+                            <option value="Lecture 1" selected>Lecture 1 (09:00 - 10:00 AM)</option>
+                            <option value="Lecture 2">Lecture 2 (10:00 - 11:00 AM)</option>
+                            <option value="Lecture 3 (Practical)">Lecture 3 (Practical 11:15 - 01:15 PM)</option>
+                            <option value="Lecture 4">Lecture 4 (02:00 - 03:00 PM)</option>
+                            <option value="Lecture 5 (Practical)">Lecture 5 (Practical 03:00 - 05:00 PM)</option>
                         </select>
                     </div>
                 </div>
-                <div class="filter-actions">
-                    <button class="btn btn-primary" onclick="loadStudents()">Load Students</button>
+                <div class="filter-actions" style="display: flex; justify-content: flex-end; margin-top: 18px;">
+                    <button class="btn btn-primary btn-glow" onclick="loadStudents()" style="padding: 12px 28px; font-size: 0.95rem;">
+                        <i class="fa-solid fa-users-viewfinder"></i> Load Students Roster
+                    </button>
                 </div>
             </div>
 
+            <!-- Attendance Marking Workspace -->
             <div class="attendance-workspace glass-card" id="student-list-container" style="display: none;">
                 <div class="workspace-header">
-                    <h3 class="card-title">Mark Attendance</h3>
-                    <div class="bulk-actions">
-                        <button class="btn btn-outline success" onclick="markBulk('present')"><i class="fa-solid fa-check"></i> Bulk Present</button>
-                        <button class="btn btn-outline danger" onclick="markBulk('absent')"><i class="fa-solid fa-xmark"></i> Bulk Absent</button>
+                    <div>
+                        <h3 class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-clipboard-user" style="color: var(--primary-blue);"></i> Student Attendance Sheet
+                        </h3>
+                        <div id="active-session-badge" style="font-size: 0.84rem; color: var(--text-secondary); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap;"></div>
+                    </div>
+                    
+                    <!-- Bulk Action Controls -->
+                    <div class="bulk-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-outline success btn-sm" onclick="markBulk('present')">
+                            <i class="fa-solid fa-check"></i> Bulk Present
+                        </button>
+                        <button type="button" class="btn btn-outline danger btn-sm" onclick="markBulk('absent')">
+                            <i class="fa-solid fa-xmark"></i> Bulk Absent
+                        </button>
+                        <button type="button" class="btn btn-outline warning btn-sm" onclick="markBulk('late')">
+                            <i class="fa-solid fa-clock"></i> Bulk Late
+                        </button>
+                        <button type="button" class="btn btn-outline btn-sm" style="border-color: rgba(139, 92, 246, 0.4); color: #A78BFA;" onclick="markBulk('leave')">
+                            <i class="fa-solid fa-plane-departure"></i> Bulk Leave
+                        </button>
                     </div>
                 </div>
+
+                <!-- Live Attendance Real-time KPI Chips & Search -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; background: rgba(8, 17, 31, 0.5); padding: 12px 18px; border-radius: 12px; margin-bottom: 18px; border: 1px solid rgba(255, 255, 255, 0.06);">
+                    <div class="attendance-live-stats" id="attendance-stat-chips">
+                        <span class="live-stat-chip total"><i class="fa-solid fa-users"></i> Total: <strong id="counter-total">0</strong></span>
+                        <span class="live-stat-chip present"><i class="fa-solid fa-circle-check"></i> Present: <strong id="counter-present">0</strong></span>
+                        <span class="live-stat-chip absent"><i class="fa-solid fa-circle-xmark"></i> Absent: <strong id="counter-absent">0</strong></span>
+                        <span class="live-stat-chip late"><i class="fa-solid fa-clock"></i> Late: <strong id="counter-late">0</strong></span>
+                        <span class="live-stat-chip leave"><i class="fa-solid fa-calendar-xmark"></i> Leave: <strong id="counter-leave">0</strong></span>
+                        <span class="live-stat-chip rate"><i class="fa-solid fa-chart-pie"></i> Rate: <strong id="counter-rate">0%</strong></span>
+                    </div>
+
+                    <!-- Quick In-Table Search Filter -->
+                    <div style="position: relative; width: 220px;">
+                        <input type="text" id="attendance-search-input" class="glass-input" placeholder="Search student..." oninput="filterAttendanceStudentRows(this.value)" style="padding: 7px 12px 7px 32px; font-size: 0.84rem; border-radius: 8px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem;"></i>
+                    </div>
+                </div>
+
+                <!-- Roster Table -->
                 <div class="table-responsive">
                     <table class="glass-table">
                         <thead>
                             <tr>
-                                <th>Roll No</th>
-                                <th>Student Name</th>
-                                <th>Status</th>
-                                <th>Remarks</th>
+                                <th style="width: 110px;">Roll No</th>
+                                <th style="min-width: 220px;">Student Name</th>
+                                <th style="min-width: 320px;">Attendance Status</th>
+                                <th style="min-width: 200px;">Remarks</th>
                             </tr>
                         </thead>
                         <tbody id="attendance-tbody">
@@ -381,8 +436,21 @@ if (!empty($facultyEmail)) {
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Workspace Footer -->
                 <div class="workspace-footer">
-                    <button class="btn btn-primary btn-glow" onclick="saveAttendance()">Save Attendance</button>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--success);"></i>
+                        <span id="attendance-save-status">Ready to submit attendance records</span>
+                    </div>
+                    <div style="display: flex; gap: 12px;">
+                        <button type="button" class="btn btn-secondary" onclick="markBulk('present')">
+                            <i class="fa-solid fa-arrow-rotate-right"></i> Set All Present
+                        </button>
+                        <button type="button" class="btn btn-primary btn-glow" onclick="saveAttendance()" style="padding: 11px 26px;">
+                            <i class="fa-solid fa-floppy-disk"></i> Save Attendance
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
