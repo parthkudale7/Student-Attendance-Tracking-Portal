@@ -428,8 +428,10 @@ const pageTitles = {
     'daily-attendance': 'Daily Attendance Marking',
     'edit-attendance': 'Edit Attendance',
     'attendance-validation': 'Attendance Validation',
-    'student-management': 'Student Management',
     'attendance-history': 'Attendance History',
+    'student-management': 'Student Directory & CRUD',
+    'student-registration': 'Student Registration Portal',
+    'student-profiles': 'Student Profile Management & Photo Upload',
     'monthly-report': 'Monthly Attendance Report',
     'student-report': 'Student-wise Attendance Report',
     'department-report': 'Department-wise Attendance Report',
@@ -455,7 +457,7 @@ function navigateTo(viewId) {
         container.appendChild(clone);
         
         // Update title
-        pageTitle.textContent = pageTitles[viewId];
+        pageTitle.textContent = pageTitles[viewId] || 'Faculty Portal';
         
         // Populate specific data for the current user
         if (currentUser) {
@@ -476,6 +478,10 @@ function initViewLogic(viewId) {
         loadDashboardStats();
     } else if (viewId === 'student-management') {
         loadStudentManagement();
+    } else if (viewId === 'student-registration') {
+        initStudentRegistrationView();
+    } else if (viewId === 'student-profiles') {
+        initStudentProfilesView();
     } else if (viewId === 'monthly-report') {
         initMonthlyReportView();
     } else if (viewId === 'student-report') {
@@ -1949,7 +1955,357 @@ async function loadDashboardStats() {
     }
 }
 
-// --- Student Management Logic ---
+// ==========================================================================
+// 4. STUDENT MANAGEMENT MODULE (Issue #4 - Registration, CRUD, Profiles, Photo Upload)
+// ==========================================================================
+
+let currentLoadedStudents = [];
+let targetQuickPhotoStudentId = null;
+
+// --- 4.1 Student Directory & CRUD ---
+async function loadStudentManagement() {
+    const dept = document.getElementById('filter-dept')?.value || '';
+    const sem = document.getElementById('filter-sem')?.value || '';
+    const div = document.getElementById('filter-div')?.value || '';
+    const search = document.getElementById('filter-search')?.value || '';
+    
+    const tbody = document.getElementById('student-management-list');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Loading students...</td></tr>';
+    
+    try {
+        const res = await fetch(`../api/students_crud.php?dept=${encodeURIComponent(dept)}&sem=${encodeURIComponent(sem)}&div=${encodeURIComponent(div)}&search=${encodeURIComponent(search)}`);
+        const result = await res.json();
+        
+        if (result.success) {
+            currentLoadedStudents = result.data || [];
+            
+            // Calculate Stats
+            const total = currentLoadedStudents.length;
+            const safeCount = currentLoadedStudents.filter(s => parseFloat(s.attendance_percentage || 0) >= 75).length;
+            const defaultersCount = total - safeCount;
+            
+            const totalEl = document.getElementById('crud-stat-total');
+            const safeEl = document.getElementById('crud-stat-safe');
+            const defEl = document.getElementById('crud-stat-defaulters');
+            if (totalEl) totalEl.textContent = total;
+            if (safeEl) safeEl.textContent = safeCount;
+            if (defEl) defEl.textContent = defaultersCount;
+
+            if (total === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 24px; color: var(--text-muted);">No students found matching current filters.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = currentLoadedStudents.map(st => {
+                const pct = parseFloat(st.attendance_percentage || 0);
+                const color = pct >= 75 ? 'var(--success)' : (pct >= 60 ? 'var(--warning)' : 'var(--danger)');
+                return `
+                <tr>
+                    <td>
+                        <img src="${st.profile_photo}" alt="${st.student_name}" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1);">
+                    </td>
+                    <td style="font-weight: 600; color: #fff;">${st.roll_no}</td>
+                    <td style="font-weight: 500;">${st.student_name}</td>
+                    <td><span class="status-badge" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">${st.department}</span></td>
+                    <td>${st.semester}</td>
+                    <td>${st.division}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="progress-bar" style="flex: 1; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; min-width: 60px;">
+                                <div style="height: 100%; width: ${Math.min(pct, 100)}%; background: ${color};"></div>
+                            </div>
+                            <span style="font-size: 0.85em; font-weight: 600; color: ${color};">${pct.toFixed(1)}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px; justify-content: center;">
+                            <button class="btn btn-sm" style="padding: 5px 9px; background: rgba(59, 130, 246, 0.15); color: #3B82F6;" onclick="viewStudentProfile(${st.student_id})" title="View Profile"><i class="fa-solid fa-eye"></i></button>
+                            <button class="btn btn-sm" style="padding: 5px 9px; background: rgba(245, 158, 11, 0.15); color: #F59E0B;" onclick="editStudent(${st.student_id})" title="Edit Details"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn btn-sm" style="padding: 5px 9px; background: rgba(168, 85, 247, 0.15); color: #A855F7;" onclick="triggerQuickPhotoUpload(${st.student_id})" title="Change Photo"><i class="fa-solid fa-camera"></i></button>
+                            <button class="btn btn-sm" style="padding: 5px 9px; background: rgba(239, 68, 68, 0.15); color: #EF4444;" onclick="deleteStudent(${st.student_id}, '${st.student_name}')" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+    } catch (err) {
+        console.error('Error loading students:', err);
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--danger);">Failed to load student roster.</td></tr>';
+    }
+}
+
+// Export Student Roster to Excel
+function exportStudentRosterExcel() {
+    if (!currentLoadedStudents || currentLoadedStudents.length === 0) {
+        alert('No student records available to export.');
+        return;
+    }
+    if (typeof XLSX === 'undefined') {
+        alert('Excel Export library is loading, please try again.');
+        return;
+    }
+    const data = currentLoadedStudents.map(st => ({
+        'Roll No': st.roll_no,
+        'Student Name': st.student_name,
+        'Department': st.department,
+        'Semester': st.semester,
+        'Division': st.division,
+        'Attendance %': (parseFloat(st.attendance_percentage) || 0).toFixed(1) + '%',
+        'Total Lectures': st.total_lectures || 0,
+        'Attended Lectures': st.attended_lectures || 0
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Students_Roster');
+    XLSX.writeFile(wb, `Student_Roster_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// --- 4.2 Student Registration Portal Logic ---
+function initStudentRegistrationView() {
+    resetRegForm();
+    loadRecentRegistrations();
+}
+
+function handleRegPhotoSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const preview = document.getElementById('reg-photo-preview');
+        if (preview) preview.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateRegPhotoPlaceholder() {
+    const name = document.getElementById('reg-student-name')?.value.trim();
+    const fileInput = document.getElementById('reg-student-photo');
+    if (!fileInput || fileInput.files.length === 0) {
+        const preview = document.getElementById('reg-photo-preview');
+        if (preview) {
+            preview.src = name ? `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3B82F6&color=fff&size=200` : 'https://ui-avatars.com/api/?name=New+Student&background=3B82F6&color=fff&size=200';
+        }
+    }
+}
+
+function resetRegForm() {
+    const form = document.getElementById('reg-student-form');
+    if (form) form.reset();
+    const preview = document.getElementById('reg-photo-preview');
+    if (preview) preview.src = 'https://ui-avatars.com/api/?name=New+Student&background=3B82F6&color=fff&size=200';
+}
+
+async function handleRegistrationSubmit(e) {
+    e.preventDefault();
+    const name = document.getElementById('reg-student-name')?.value.trim();
+    const roll = document.getElementById('reg-student-roll')?.value.trim();
+    const email = document.getElementById('reg-student-email')?.value.trim();
+    const dept = document.getElementById('reg-student-dept')?.value;
+    const sem = document.getElementById('reg-student-sem')?.value;
+    const div = document.getElementById('reg-student-div')?.value;
+    const photoInput = document.getElementById('reg-student-photo');
+    const submitBtn = document.getElementById('reg-submit-btn');
+
+    if (!name || !roll || !email || !dept || !sem || !div) {
+        alert('Please fill in all required fields.');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Registering Student...';
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'create');
+    formData.append('name', name);
+    formData.append('roll', roll);
+    formData.append('email', email);
+    formData.append('dept', dept);
+    formData.append('sem', sem);
+    formData.append('div', div);
+    if (photoInput && photoInput.files.length > 0) {
+        formData.append('photo', photoInput.files[0]);
+    }
+
+    try {
+        const res = await fetch('../api/students_crud.php', {
+            method: 'POST',
+            body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            alert(`🎉 Success! ${name} has been enrolled.\n\nRoll No: ${roll}\nDepartment: ${dept}\nLogin Password: ${roll}`);
+            resetRegForm();
+            loadRecentRegistrations();
+            if (typeof loadDashboardStats === 'function') loadDashboardStats();
+        } else {
+            alert('Registration Failed: ' + (data.message || 'Unknown error occurred'));
+        }
+    } catch (err) {
+        console.error('Registration Error:', err);
+        alert('An error occurred while submitting student registration.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-user-check"></i> Register Student';
+        }
+    }
+}
+
+async function loadRecentRegistrations() {
+    const tbody = document.getElementById('reg-recent-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-secondary);">Loading recent registrations...</td></tr>';
+    try {
+        const res = await fetch('../api/students_crud.php');
+        const result = await res.json();
+        if (result.success && result.data) {
+            const recent = result.data.slice(-5).reverse();
+            if (recent.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--text-muted);">No student registrations found.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = recent.map(st => `
+                <tr>
+                    <td><img src="${st.profile_photo}" alt="${st.student_name}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;"></td>
+                    <td style="font-weight:600; color:#fff;">${st.roll_no}</td>
+                    <td>${st.student_name}</td>
+                    <td><span class="status-badge" style="background: rgba(59, 130, 246, 0.15); color: #3B82F6; font-size:0.75rem; padding:2px 7px; border-radius:4px;">${st.department}</span></td>
+                    <td>${st.semester}</td>
+                    <td>${st.division}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline" onclick="viewStudentProfile(${st.student_id})" style="padding: 3px 8px;"><i class="fa-solid fa-eye"></i> View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color:var(--danger);">Failed to load recent registrations.</td></tr>';
+    }
+}
+
+// --- 4.3 Student Profiles Gallery & Photo Upload Logic ---
+function initStudentProfilesView() {
+    loadStudentProfilesGallery();
+}
+
+async function loadStudentProfilesGallery() {
+    const dept = document.getElementById('profile-filter-dept')?.value || '';
+    const sem = document.getElementById('profile-filter-sem')?.value || '';
+    const div = document.getElementById('profile-filter-div')?.value || '';
+    const search = document.getElementById('profile-filter-search')?.value || '';
+    const grid = document.getElementById('student-profiles-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Loading profile gallery...</p></div>';
+
+    try {
+        const res = await fetch(`../api/students_crud.php?dept=${encodeURIComponent(dept)}&sem=${encodeURIComponent(sem)}&div=${encodeURIComponent(div)}&search=${encodeURIComponent(search)}`);
+        const result = await res.json();
+        if (result.success && result.data) {
+            if (result.data.length === 0) {
+                grid.innerHTML = '<div class="glass-card" style="grid-column: 1/-1; text-align: center; padding: 40px; border-radius: 12px; color: var(--text-muted);"><i class="fa-solid fa-users-slash fa-2x"></i><p style="margin-top: 12px;">No student profiles match your search filters.</p></div>';
+                return;
+            }
+
+            grid.innerHTML = result.data.map(st => {
+                const pct = parseFloat(st.attendance_percentage || 0);
+                const color = pct >= 75 ? 'var(--success)' : (pct >= 60 ? 'var(--warning)' : 'var(--danger)');
+                return `
+                <div class="glass-card" style="padding: 22px; border-radius: 16px; display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; transition: transform 0.2s, box-shadow 0.2s;">
+                    <div style="position: relative; margin-bottom: 14px;">
+                        <img src="${st.profile_photo}" alt="${st.student_name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid ${color}; box-shadow: 0 6px 16px rgba(0,0,0,0.3);">
+                        <button onclick="triggerQuickPhotoUpload(${st.student_id})" title="Change Profile Photo" style="position: absolute; bottom: 0; right: 0; background: var(--primary-color); color: #fff; border: 2px solid #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.75rem; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
+                            <i class="fa-solid fa-camera"></i>
+                        </button>
+                    </div>
+
+                    <h3 style="font-size: 1.1rem; margin: 0 0 4px 0; color: #fff;">${st.student_name}</h3>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; font-weight: 600;">${st.roll_no}</div>
+
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px;">
+                        <span style="background: rgba(59, 130, 246, 0.15); color: #3B82F6; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; font-weight: 500;">${st.department}</span>
+                        <span style="background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">${st.semester}</span>
+                        <span style="background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-size: 0.75rem; padding: 3px 8px; border-radius: 6px;">${st.division}</span>
+                    </div>
+
+                    <div style="width: 100%; background: rgba(0,0,0,0.2); padding: 10px 14px; border-radius: 10px; margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px;">
+                            <span style="color: var(--text-muted);">Attendance Rate</span>
+                            <span style="font-weight: 700; color: ${color};">${pct.toFixed(1)}%</span>
+                        </div>
+                        <div class="progress-bar" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                            <div style="height: 100%; width: ${Math.min(pct, 100)}%; background: ${color};"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 8px; width: 100%;">
+                        <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="viewStudentProfile(${st.student_id})"><i class="fa-solid fa-id-card"></i> Profile</button>
+                        <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="editStudent(${st.student_id})"><i class="fa-solid fa-pen"></i> Edit</button>
+                    </div>
+                </div>
+            `}).join('');
+        }
+    } catch (err) {
+        grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--danger);">Failed to load profile cards.</div>';
+    }
+}
+
+function triggerQuickPhotoUpload(studentId) {
+    targetQuickPhotoStudentId = studentId;
+    const fileInput = document.getElementById('quick-photo-input');
+    if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+    }
+}
+
+async function handleQuickPhotoUpload(e) {
+    const file = e.target.files[0];
+    if (!file || !targetQuickPhotoStudentId) return;
+
+    const formData = new FormData();
+    formData.append('action', 'update');
+    formData.append('student_id', targetQuickPhotoStudentId);
+    formData.append('photo', file);
+
+    // Fetch existing details for name/roll requirements
+    try {
+        const getRes = await fetch(`../api/students_crud.php?action=get&id=${targetQuickPhotoStudentId}`);
+        const getResult = await getRes.json();
+        if (getResult.success && getResult.data) {
+            const st = getResult.data;
+            formData.append('name', st.student_name);
+            formData.append('roll', st.roll_no);
+            formData.append('dept', st.department);
+            formData.append('sem', st.semester);
+            formData.append('div', st.division);
+
+            const uploadRes = await fetch('../api/students_crud.php', {
+                method: 'POST',
+                body: formData
+            });
+            const uploadResult = await uploadRes.json();
+            if (uploadResult.success) {
+                alert('Profile photo updated successfully!');
+                loadStudentManagement();
+                loadStudentProfilesGallery();
+            } else {
+                alert(uploadResult.message || 'Failed to update profile photo.');
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        alert('An error occurred during photo upload.');
+    }
+}
+
+// --- 4.4 Modals and Shared Student CRUD Actions ---
 function openAddStudentModal() {
     const form = document.getElementById('student-form') || document.getElementById('add-student-form');
     if (form) form.reset();
@@ -1995,7 +2351,7 @@ async function submitAddStudent() {
     if (id) formData.append('student_id', id);
     formData.append('name', name);
     formData.append('roll', roll);
-    if (!id) formData.append('email', email); // only strictly needed on create
+    if (!id) formData.append('email', email);
     formData.append('dept', dept);
     formData.append('sem', sem);
     formData.append('div', div);
@@ -2015,6 +2371,7 @@ async function submitAddStudent() {
             alert(data.message);
             closeAddStudentModal();
             loadStudentManagement();
+            loadStudentProfilesGallery();
             if (typeof loadDashboardStats === 'function') {
                 loadDashboardStats();
             }
@@ -2029,59 +2386,6 @@ async function submitAddStudent() {
             btn.disabled = false;
             btn.textContent = id ? 'Save Changes' : 'Add Student';
         }
-    }
-}
-
-async function loadStudentManagement() {
-    const dept = document.getElementById('filter-dept')?.value || '';
-    const sem = document.getElementById('filter-sem')?.value || '';
-    const div = document.getElementById('filter-div')?.value || '';
-    const search = document.getElementById('filter-search')?.value || '';
-    
-    const tbody = document.getElementById('student-management-list');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px;">Loading students...</td></tr>';
-    
-    try {
-        const res = await fetch(`../api/students_crud.php?dept=${encodeURIComponent(dept)}&sem=${encodeURIComponent(sem)}&div=${encodeURIComponent(div)}&search=${encodeURIComponent(search)}`);
-        const result = await res.json();
-        
-        if (result.success) {
-            if (result.data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--text-muted);">No students found.</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = result.data.map(st => `
-                <tr>
-                    <td><img src="${st.profile_photo}" alt="${st.student_name}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"></td>
-                    <td style="font-weight: 500;">${st.roll_no}</td>
-                    <td>${st.student_name}</td>
-                    <td><span class="status-badge" style="background: var(--primary-light); color: var(--primary);">${st.department}</span></td>
-                    <td>${st.semester}</td>
-                    <td>${st.division}</td>
-                    <td>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <div class="progress-bar" style="flex: 1; height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden; width: 60px;">
-                                <div style="height: 100%; width: ${st.attendance_percentage}%; background: ${st.attendance_percentage >= 75 ? 'var(--success)' : (st.attendance_percentage >= 60 ? 'var(--warning)' : 'var(--danger)')}"></div>
-                            </div>
-                            <span style="font-size: 0.85em; color: var(--text-secondary);">${st.attendance_percentage}%</span>
-                        </div>
-                    </td>
-                    <td>
-                        <div style="display: flex; gap: 8px; justify-content: center;">
-                            <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="viewStudentProfile(${st.student_id})" title="View Profile"><i class="fa-solid fa-eye" style="color: var(--primary);"></i></button>
-                            <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="editStudent(${st.student_id})" title="Edit"><i class="fa-solid fa-pen" style="color: var(--warning);"></i></button>
-                            <button class="btn btn-sm" style="padding: 5px 10px; background: var(--bg-hover);" onclick="deleteStudent(${st.student_id}, '${st.student_name}')" title="Delete"><i class="fa-solid fa-trash" style="color: var(--danger);"></i></button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-    } catch (err) {
-        console.error('Error loading students:', err);
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 20px; color: var(--danger);">Failed to load students.</td></tr>';
     }
 }
 
@@ -2125,6 +2429,7 @@ async function deleteStudent(id, name) {
         if (result.success) {
             alert('Student deleted successfully.');
             loadStudentManagement();
+            loadStudentProfilesGallery();
         } else {
             alert(result.message || 'Failed to delete student.');
         }
@@ -2151,11 +2456,12 @@ async function viewStudentProfile(id) {
             
             const bar = document.getElementById('profile-modal-attendance-bar');
             if (bar) {
-                bar.style.width = st.attendance_percentage + '%';
-                bar.style.background = st.attendance_percentage >= 75 ? 'var(--success)' : (st.attendance_percentage >= 60 ? 'var(--warning)' : 'var(--danger)');
+                const pct = parseFloat(st.attendance_percentage || 0);
+                bar.style.width = pct + '%';
+                bar.style.background = pct >= 75 ? 'var(--success)' : (pct >= 60 ? 'var(--warning)' : 'var(--danger)');
             }
             const textEl = document.getElementById('profile-modal-attendance-text');
-            if (textEl) textEl.textContent = st.attendance_percentage + '%';
+            if (textEl) textEl.textContent = (parseFloat(st.attendance_percentage) || 0) + '%';
             
             document.getElementById('student-profile-modal').classList.add('show');
         }
@@ -2170,11 +2476,22 @@ function closeStudentProfileModal() {
     if (modal) modal.classList.remove('show');
 }
 
-// Global window bindings to guarantee accessibility in HTML inline event handlers
+// Global window bindings
 window.openAddStudentModal = openAddStudentModal;
 window.closeAddStudentModal = closeAddStudentModal;
 window.submitAddStudent = submitAddStudent;
 window.loadStudentManagement = loadStudentManagement;
+window.exportStudentRosterExcel = exportStudentRosterExcel;
+window.initStudentRegistrationView = initStudentRegistrationView;
+window.handleRegPhotoSelect = handleRegPhotoSelect;
+window.updateRegPhotoPlaceholder = updateRegPhotoPlaceholder;
+window.resetRegForm = resetRegForm;
+window.handleRegistrationSubmit = handleRegistrationSubmit;
+window.loadRecentRegistrations = loadRecentRegistrations;
+window.initStudentProfilesView = initStudentProfilesView;
+window.loadStudentProfilesGallery = loadStudentProfilesGallery;
+window.triggerQuickPhotoUpload = triggerQuickPhotoUpload;
+window.handleQuickPhotoUpload = handleQuickPhotoUpload;
 window.editStudent = editStudent;
 window.deleteStudent = deleteStudent;
 window.viewStudentProfile = viewStudentProfile;

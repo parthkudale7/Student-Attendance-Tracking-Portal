@@ -78,11 +78,13 @@ if (!empty($facultyEmail)) {
             </div>
             
             <nav class="sidebar-nav">
-                <div class="nav-section-title">Faculty Module</div>
+                <div class="nav-section-title">Overview</div>
                 <a href="#dashboard" class="nav-item active" data-view="dashboard">
                     <i class="fa-solid fa-border-all"></i>
                     <span>Dashboard</span>
                 </a>
+
+                <div class="nav-section-title" style="margin-top: 15px;">Attendance Management</div>
                 <a href="#daily-attendance" class="nav-item" data-view="daily-attendance">
                     <i class="fa-solid fa-calendar-check"></i>
                     <span>Daily Attendance</span>
@@ -95,13 +97,24 @@ if (!empty($facultyEmail)) {
                     <i class="fa-solid fa-clipboard-check"></i>
                     <span>Attendance Validation</span>
                 </a>
-                <a href="#student-management" class="nav-item" data-view="student-management">
-                    <i class="fa-solid fa-user-graduate"></i>
-                    <span>Student Management</span>
-                </a>
                 <a href="#attendance-history" class="nav-item" data-view="attendance-history">
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span>Attendance History</span>
+                </a>
+
+                <!-- Separate Student Management Section (Issue #4) -->
+                <div class="nav-section-title" style="margin-top: 15px;">Student Management</div>
+                <a href="#student-management" class="nav-item" data-view="student-management">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Student Directory (CRUD)</span>
+                </a>
+                <a href="#student-registration" class="nav-item" data-view="student-registration">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Student Registration</span>
+                </a>
+                <a href="#student-profiles" class="nav-item" data-view="student-profiles">
+                    <i class="fa-solid fa-id-card-clip"></i>
+                    <span>Profiles & Photo Upload</span>
                 </a>
 
                 <div class="nav-section-title" style="margin-top: 15px;">Reports & Analytics</div>
@@ -663,16 +676,58 @@ if (!empty($facultyEmail)) {
         </div>
     </template>
 
-    <!-- 4.5. Student Management View -->
+    <!-- 4.5. Student Directory & CRUD View -->
     <template id="tpl-student-management">
         <div class="view-content fade-in" style="display: flex; flex-direction: column; gap: 24px;">
-            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
                 <div>
-                    <h2 class="view-title">Student Management</h2>
-                    <p class="view-subtitle" style="color: var(--text-secondary);">Manage student profiles, search, filter and view attendance stats</p>
+                    <h2 class="view-title">Student Directory & CRUD</h2>
+                    <p class="view-subtitle" style="color: var(--text-secondary);">Comprehensive student database, profile management, and attendance stats</p>
                 </div>
-                <div>
-                    <button class="btn btn-primary" onclick="openAddStudentModal()"><i class="fa-solid fa-user-plus"></i> Add New Student</button>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <a href="#student-registration" class="btn btn-outline" onclick="navigateTo('student-registration')"><i class="fa-solid fa-user-plus"></i> Registration Form</a>
+                    <a href="#student-profiles" class="btn btn-outline" onclick="navigateTo('student-profiles')"><i class="fa-solid fa-id-card-clip"></i> Profile Gallery</a>
+                    <button class="btn btn-primary" onclick="openAddStudentModal()"><i class="fa-solid fa-plus"></i> Add Student (Modal)</button>
+                </div>
+            </div>
+
+            <!-- Summary Stat Cards -->
+            <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                <div class="glass-card stat-card" style="display: flex; align-items: center; gap: 16px; padding: 18px 22px;">
+                    <div class="stat-icon" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(59, 130, 246, 0.15); color: #3B82F6;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="crud-stat-total" style="font-size: 1.6rem; font-weight: 700;">--</div>
+                        <div class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary);">Total Students</div>
+                    </div>
+                </div>
+                <div class="glass-card stat-card" style="display: flex; align-items: center; gap: 16px; padding: 18px 22px;">
+                    <div class="stat-icon" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(16, 185, 129, 0.15); color: #10B981;">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="crud-stat-safe" style="font-size: 1.6rem; font-weight: 700;">--</div>
+                        <div class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary);">Above 75% Attendance</div>
+                    </div>
+                </div>
+                <div class="glass-card stat-card" style="display: flex; align-items: center; gap: 16px; padding: 18px 22px;">
+                    <div class="stat-icon" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(239, 68, 68, 0.15); color: #EF4444;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" id="crud-stat-defaulters" style="font-size: 1.6rem; font-weight: 700;">--</div>
+                        <div class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary);">Low Attendance (<75%)</div>
+                    </div>
+                </div>
+                <div class="glass-card stat-card" style="display: flex; align-items: center; gap: 16px; padding: 18px 22px;">
+                    <div class="stat-icon" style="width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; background: rgba(168, 85, 247, 0.15); color: #A855F7;">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div>
+                        <div class="stat-value" style="font-size: 1.6rem; font-weight: 700;">5</div>
+                        <div class="stat-label" style="font-size: 0.85rem; color: var(--text-secondary);">Active Departments</div>
+                    </div>
                 </div>
             </div>
 
@@ -719,8 +774,9 @@ if (!empty($facultyEmail)) {
                         <label>Search Student</label>
                         <input type="text" class="glass-input" id="filter-search" placeholder="Search by name or roll..." oninput="loadStudentManagement()">
                     </div>
-                    <div class="form-group mb-0">
-                        <button class="btn btn-outline w-100" onclick="document.getElementById('filter-dept').value='';document.getElementById('filter-sem').value='';document.getElementById('filter-div').value='';document.getElementById('filter-search').value='';loadStudentManagement();"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    <div class="form-group mb-0" style="display: flex; gap: 8px;">
+                        <button class="btn btn-outline" style="flex: 1;" onclick="document.getElementById('filter-dept').value='';document.getElementById('filter-sem').value='';document.getElementById('filter-div').value='';document.getElementById('filter-search').value='';loadStudentManagement();"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                        <button class="btn btn-outline" onclick="exportStudentRosterExcel()" title="Export Excel"><i class="fa-solid fa-file-excel text-green"></i></button>
                     </div>
                 </div>
             </div>
@@ -738,7 +794,7 @@ if (!empty($facultyEmail)) {
                                 <th>Semester</th>
                                 <th>Division</th>
                                 <th>Attendance %</th>
-                                <th style="width: 140px; text-align: center;">Actions</th>
+                                <th style="width: 160px; text-align: center;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="student-management-list">
@@ -747,6 +803,212 @@ if (!empty($facultyEmail)) {
                     </table>
                 </div>
             </div>
+        </div>
+    </template>
+
+    <!-- 4.6. Student Registration View (Issue #4) -->
+    <template id="tpl-student-registration">
+        <div class="view-content fade-in" style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 class="view-title">Student Registration Portal</h2>
+                    <p class="view-subtitle" style="color: var(--text-secondary);">Enroll new students, upload profile photos, assign academic classes and provision portal login</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="#student-management" class="btn btn-outline" onclick="navigateTo('student-management')"><i class="fa-solid fa-arrow-left"></i> Back to Directory</a>
+                    <a href="#student-profiles" class="btn btn-outline" onclick="navigateTo('student-profiles')"><i class="fa-solid fa-id-card-clip"></i> View Profiles</a>
+                </div>
+            </div>
+
+            <!-- Registration Form Container -->
+            <div class="glass-card" style="padding: 30px; border-radius: 16px;">
+                <form id="reg-student-form" onsubmit="handleRegistrationSubmit(event)">
+                    <div style="display: grid; grid-template-columns: 280px 1fr; gap: 32px; align-items: start;">
+                        <!-- Left: Photo Upload & Live Preview -->
+                        <div style="display: flex; flex-direction: column; align-items: center; text-align: center; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15); border-radius: 14px; padding: 24px;">
+                            <div style="position: relative; width: 140px; height: 140px; margin-bottom: 16px;">
+                                <img id="reg-photo-preview" src="https://ui-avatars.com/api/?name=New+Student&background=3B82F6&color=fff&size=200" alt="Preview" style="width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid var(--primary-color); box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+                                <label for="reg-student-photo" style="position: absolute; bottom: 4px; right: 4px; background: var(--primary-color); color: #fff; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; border: 2px solid #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
+                                    <i class="fa-solid fa-camera"></i>
+                                </label>
+                            </div>
+                            <input type="file" id="reg-student-photo" accept="image/*" style="display: none;" onchange="handleRegPhotoSelect(event)">
+                            <h4 style="margin: 0 0 6px 0; font-size: 1.05rem;">Student Profile Photo</h4>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0 0 14px 0;">Upload a clear passport-size photo (JPG, PNG, WEBP - Max 2MB)</p>
+                            <label for="reg-student-photo" class="btn btn-outline btn-sm" style="cursor: pointer;"><i class="fa-solid fa-upload"></i> Browse Photo</label>
+                        </div>
+
+                        <!-- Right: Student Metadata Form -->
+                        <div style="display: flex; flex-direction: column; gap: 18px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                                <div class="form-group mb-0">
+                                    <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 6px; display: block;">Student Full Name <span style="color: var(--danger);">*</span></label>
+                                    <input type="text" class="glass-input w-100" id="reg-student-name" required placeholder="e.g. Aryan Jedhe" oninput="updateRegPhotoPlaceholder()">
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 6px; display: block;">Roll Number / Enrollment ID <span style="color: var(--danger);">*</span></label>
+                                    <input type="text" class="glass-input w-100" id="reg-student-roll" required placeholder="e.g. CE3A01">
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-0">
+                                <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 6px; display: block;">Official Email Address <span style="color: var(--danger);">*</span></label>
+                                <input type="email" class="glass-input w-100" id="reg-student-email" required placeholder="e.g. aryan.jedhe@college.edu">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+                                <div class="form-group mb-0">
+                                    <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 6px; display: block;">Department <span style="color: var(--danger);">*</span></label>
+                                    <select class="glass-input w-100" id="reg-student-dept" required>
+                                        <option value="">Select Branch</option>
+                                        <option value="CE">CE - Computer Engineering</option>
+                                        <option value="AIDS">AIDS - AI & Data Science</option>
+                                        <option value="EE">EE - Electrical Engineering</option>
+                                        <option value="BT">BT - Biotechnology</option>
+                                        <option value="ME">ME - Mechanical Engineering</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 6px; display: block;">Semester <span style="color: var(--danger);">*</span></label>
+                                    <select class="glass-input w-100" id="reg-student-sem" required>
+                                        <option value="">Select Semester</option>
+                                        <option value="Semester 1">Semester 1</option>
+                                        <option value="Semester 2">Semester 2</option>
+                                        <option value="Semester 3">Semester 3</option>
+                                        <option value="Semester 4">Semester 4</option>
+                                        <option value="Semester 5">Semester 5</option>
+                                        <option value="Semester 6">Semester 6</option>
+                                        <option value="Semester 7">Semester 7</option>
+                                        <option value="Semester 8">Semester 8</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mb-0">
+                                    <label style="font-weight: 500; font-size: 0.9rem; margin-bottom: 6px; display: block;">Division <span style="color: var(--danger);">*</span></label>
+                                    <select class="glass-input w-100" id="reg-student-div" required>
+                                        <option value="">Select Division</option>
+                                        <option value="Div A">Div A</option>
+                                        <option value="Div B">Div B</option>
+                                        <option value="Div C">Div C</option>
+                                        <option value="Div D">Div D</option>
+                                        <option value="Div E">Div E</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 12px;">
+                                <i class="fa-solid fa-shield-halved text-blue" style="font-size: 1.2rem;"></i>
+                                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    <strong>Automatic Account Provisioning:</strong> Registering this student creates their portal login credentials. Initial password will match their <strong>Roll Number</strong>.
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+                                <button type="reset" class="btn btn-outline" onclick="resetRegForm()"><i class="fa-solid fa-rotate-left"></i> Reset Form</button>
+                                <button type="submit" class="btn btn-primary" id="reg-submit-btn"><i class="fa-solid fa-user-check"></i> Register Student</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Recently Registered Students Preview -->
+            <div class="glass-card" style="padding: 24px; border-radius: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="font-size: 1.15rem; margin: 0;"><i class="fa-solid fa-clock-rotate-left text-blue"></i> Recently Registered Students</h3>
+                    <a href="#student-management" class="btn btn-outline btn-sm" onclick="navigateTo('student-management')">View All in Directory</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="glass-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Photo</th>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Department</th>
+                                <th>Semester</th>
+                                <th>Division</th>
+                                <th>Registered Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reg-recent-tbody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 4.7. Student Profile Management & Photo Upload View (Issue #4) -->
+    <template id="tpl-student-profiles">
+        <div class="view-content fade-in" style="display: flex; flex-direction: column; gap: 24px;">
+            <div class="view-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <h2 class="view-title">Student Profile Management & Photo Upload</h2>
+                    <p class="view-subtitle" style="color: var(--text-secondary);">Interactive student profile gallery, instant photo updater, and academic attendance overview</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <a href="#student-registration" class="btn btn-primary" onclick="navigateTo('student-registration')"><i class="fa-solid fa-user-plus"></i> New Student Registration</a>
+                    <a href="#student-management" class="btn btn-outline" onclick="navigateTo('student-management')"><i class="fa-solid fa-table-list"></i> Table View</a>
+                </div>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="filters-card glass-card" style="padding: 20px; border-radius: 12px;">
+                <div class="filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; align-items: end;">
+                    <div class="form-group mb-0">
+                        <label>Department</label>
+                        <select class="glass-input" id="profile-filter-dept" onchange="loadStudentProfilesGallery()">
+                            <option value="">All Departments</option>
+                            <option value="CE">CE - Computer Engineering</option>
+                            <option value="AIDS">AIDS - AI & Data Science</option>
+                            <option value="EE">EE - Electrical Engineering</option>
+                            <option value="BT">BT - Biotechnology</option>
+                            <option value="ME">ME - Mechanical Engineering</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Semester</label>
+                        <select class="glass-input" id="profile-filter-sem" onchange="loadStudentProfilesGallery()">
+                            <option value="">All Semesters</option>
+                            <option value="Semester 1">Semester 1</option>
+                            <option value="Semester 2">Semester 2</option>
+                            <option value="Semester 3">Semester 3</option>
+                            <option value="Semester 4">Semester 4</option>
+                            <option value="Semester 5">Semester 5</option>
+                            <option value="Semester 6">Semester 6</option>
+                            <option value="Semester 7">Semester 7</option>
+                            <option value="Semester 8">Semester 8</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Division</label>
+                        <select class="glass-input" id="profile-filter-div" onchange="loadStudentProfilesGallery()">
+                            <option value="">All Divisions</option>
+                            <option value="Div A">Div A</option>
+                            <option value="Div B">Div B</option>
+                            <option value="Div C">Div C</option>
+                            <option value="Div D">Div D</option>
+                            <option value="Div E">Div E</option>
+                        </select>
+                    </div>
+                    <div class="form-group mb-0">
+                        <label>Search Profile</label>
+                        <input type="text" class="glass-input" id="profile-filter-search" placeholder="Search by name or roll..." oninput="loadStudentProfilesGallery()">
+                    </div>
+                    <div class="form-group mb-0">
+                        <button class="btn btn-outline w-100" onclick="document.getElementById('profile-filter-dept').value='';document.getElementById('profile-filter-sem').value='';document.getElementById('profile-filter-div').value='';document.getElementById('profile-filter-search').value='';loadStudentProfilesGallery();"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profiles Grid Container -->
+            <div id="student-profiles-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px;">
+                <!-- Profile Cards dynamically loaded here -->
+            </div>
+
+            <!-- Hidden File Input for quick photo upload -->
+            <input type="file" id="quick-photo-input" accept="image/*" style="display: none;" onchange="handleQuickPhotoUpload(event)">
         </div>
     </template>
 
