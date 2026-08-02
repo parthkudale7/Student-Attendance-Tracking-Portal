@@ -1365,3 +1365,58 @@ select.glass-input option {
         padding: 16px;
     }
 }
+
+/* Reports & Analytics Enhancements */
+.filters-card {
+    padding: 20px 24px;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.badge-risk-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: #EF4444;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.badge-risk-moderate {
+    background: rgba(245, 158, 11, 0.2);
+    color: #F59E0B;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.badge-risk-safe {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10B981;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+@media print {
+    .sidebar, .topbar, .filters-card, .filter-actions, .ambient-glow, .btn {
+        display: none !important;
+    }
+    .main-content {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    body {
+        background: #fff !important;
+        color: #000 !important;
+    }
+    .glass-card, .glass-table {
+        background: none !important;
+        border: 1px solid #ddd !important;
+        color: #000 !important;
+        box-shadow: none !important;
+    }
+    .glass-table th, .glass-table td {
+        color: #000 !important;
+        border: 1px solid #ccc !important;
+    }
+}
+

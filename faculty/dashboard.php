@@ -103,6 +103,25 @@ if (!empty($facultyEmail)) {
                     <i class="fa-solid fa-clock-rotate-left"></i>
                     <span>Attendance History</span>
                 </a>
+
+                <div class="nav-section-title" style="margin-top: 15px;">Reports & Analytics</div>
+                <a href="#monthly-report" class="nav-item" data-view="monthly-report">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Monthly Report</span>
+                </a>
+                <a href="#student-report" class="nav-item" data-view="student-report">
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>Student Report</span>
+                </a>
+                <a href="#department-report" class="nav-item" data-view="department-report">
+                    <i class="fa-solid fa-building-columns"></i>
+                    <span>Department Report</span>
+                </a>
+                <a href="#low-attendance" class="nav-item" data-view="low-attendance">
+                    <i class="fa-solid fa-triangle-exclamation text-warning"></i>
+                    <span>Low Attendance Alerts</span>
+                    <span class="badge" style="background: #EF4444; color: #fff; font-size: 0.65rem; padding: 2px 7px; border-radius: 10px; margin-left: auto;">Alerts</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -1058,8 +1077,523 @@ if (!empty($facultyEmail)) {
         </div>
     </template>
 
+    <!-- 11. Monthly Attendance Report View -->
+    <template id="tpl-monthly-report">
+        <div class="view-content fade-in" id="monthly-report-wrapper">
+            <!-- Header with Quick Action Exports -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 5px; font-weight: 700;">Monthly Attendance Report</h3>
+                    <p class="text-muted" style="font-size: 0.9rem; margin: 0;">Comprehensive aggregate attendance breakdown, trend statistics, and class summaries.</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" onclick="exportMonthlyReportPDF()"><i class="fa-solid fa-file-pdf text-danger"></i> Export PDF</button>
+                    <button class="btn btn-outline" onclick="exportMonthlyReportExcel()"><i class="fa-solid fa-file-excel text-success"></i> Export Excel</button>
+                    <button class="btn btn-outline" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+                    <a href="../satp/monthly_report.php" target="_blank" class="btn btn-primary btn-sm" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-up-right-from-square"></i> Standalone SATP View</a>
+                </div>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="filters-card glass-card mb-4">
+                <div class="filters-grid">
+                    <div class="form-group">
+                        <label>Month</label>
+                        <select class="glass-input" id="rep-month">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07" selected>July</option>
+                            <option value="08">August</option>
+                            <option value="09">September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <select class="glass-input" id="rep-year">
+                            <option value="2026" selected>2026</option>
+                            <option value="2025">2025</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="glass-input" id="rep-dept">
+                            <option value="">All Departments</option>
+                            <option value="CE" selected>CE - Computer Engineering</option>
+                            <option value="AIDS">AIDS - AI & Data Science</option>
+                            <option value="EE">EE - Electrical Engineering</option>
+                            <option value="BT">BT - Biotechnology</option>
+                            <option value="ME">ME - Mechanical Engineering</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <select class="glass-input" id="rep-sem">
+                            <option value="">All Semesters</option>
+                            <option value="Semester 1">Semester 1</option>
+                            <option value="Semester 2">Semester 2</option>
+                            <option value="Semester 3">Semester 3</option>
+                            <option value="Semester 4">Semester 4</option>
+                            <option value="Semester 5" selected>Semester 5</option>
+                            <option value="Semester 6">Semester 6</option>
+                            <option value="Semester 7">Semester 7</option>
+                            <option value="Semester 8">Semester 8</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Division</label>
+                        <select class="glass-input" id="rep-div">
+                            <option value="">All Divisions</option>
+                            <option value="Div A" selected>Div A</option>
+                            <option value="Div B">Div B</option>
+                            <option value="Div C">Div C</option>
+                            <option value="Div D">Div D</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Subject</label>
+                        <select class="glass-input" id="rep-subject">
+                            <option value="">All Subjects</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions mt-3" style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="generateMonthlyReport()"><i class="fa-solid fa-filter"></i> Generate Report</button>
+                    <button class="btn btn-outline" onclick="resetMonthlyFilters()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+                </div>
+            </div>
+
+            <!-- Summary Stat Cards -->
+            <div class="stats-grid mb-4" id="monthly-stats-grid">
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Total Sessions</div>
+                        <div class="stat-value" id="rep-total-sessions">--</div>
+                        <div class="stat-subtitle text-blue"><i class="fa-solid fa-calendar-check"></i> Recorded Classes</div>
+                    </div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-chalkboard"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Average Attendance</div>
+                        <div class="stat-value" id="rep-avg-attendance">--%</div>
+                        <div class="stat-subtitle text-green"><i class="fa-solid fa-arrow-trend-up"></i> Class Average</div>
+                    </div>
+                    <div class="stat-icon green"><i class="fa-solid fa-chart-line"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Above 75% Cutoff</div>
+                        <div class="stat-value text-success" id="rep-safe-count">--</div>
+                        <div class="stat-subtitle text-green"><i class="fa-solid fa-circle-check"></i> Safe Zone</div>
+                    </div>
+                    <div class="stat-icon green"><i class="fa-solid fa-user-shield"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Below 75% Defaulters</div>
+                        <div class="stat-value text-danger" id="rep-defaulter-count">--</div>
+                        <div class="stat-subtitle text-amber"><i class="fa-solid fa-triangle-exclamation"></i> Alerts Required</div>
+                    </div>
+                    <div class="stat-icon orange"><i class="fa-solid fa-bell"></i></div>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="glass-card">
+                <div class="workspace-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0; font-weight: 600;"><i class="fa-solid fa-table-list text-primary"></i> Attendance Registry (<span id="monthly-table-month-name">July 2026</span>)</h4>
+                    <span class="badge" id="monthly-record-count-badge" style="background: rgba(79, 124, 255, 0.15); color: var(--primary); border: 1px solid rgba(79, 124, 255, 0.3); padding: 4px 10px; border-radius: 20px;">0 Records</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="glass-table" id="monthly-report-table">
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Department</th>
+                                <th>Semester & Div</th>
+                                <th>Total Classes</th>
+                                <th>Present</th>
+                                <th>Absent</th>
+                                <th>Attendance %</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-report-tbody">
+                            <tr><td colspan="10" class="text-center text-muted" style="padding: 30px;">Select filters and click Generate Report</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 12. Student-wise Attendance Report View -->
+    <template id="tpl-student-report">
+        <div class="view-content fade-in" id="student-report-wrapper">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 5px; font-weight: 700;">Student-wise Attendance Report</h3>
+                    <p class="text-muted" style="font-size: 0.9rem; margin: 0;">Detailed attendance performance, subject-wise breakdown, and log history for individual students.</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" onclick="exportStudentReportPDF()"><i class="fa-solid fa-file-pdf text-danger"></i> Export PDF</button>
+                    <button class="btn btn-outline" onclick="exportStudentReportExcel()"><i class="fa-solid fa-file-excel text-success"></i> Export Excel</button>
+                    <button class="btn btn-outline" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+                </div>
+            </div>
+
+            <!-- Student Filter / Search Bar -->
+            <div class="filters-card glass-card mb-4">
+                <div class="filters-grid">
+                    <div class="form-group">
+                        <label>Department</label>
+                        <select class="glass-input" id="sr-dept" onchange="filterStudentReportList()">
+                            <option value="">All Departments</option>
+                            <option value="CE" selected>CE</option>
+                            <option value="AIDS">AIDS</option>
+                            <option value="EE">EE</option>
+                            <option value="BT">BT</option>
+                            <option value="ME">ME</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Semester</label>
+                        <select class="glass-input" id="sr-sem" onchange="filterStudentReportList()">
+                            <option value="">All Semesters</option>
+                            <option value="Semester 1">Semester 1</option>
+                            <option value="Semester 2">Semester 2</option>
+                            <option value="Semester 3">Semester 3</option>
+                            <option value="Semester 4">Semester 4</option>
+                            <option value="Semester 5" selected>Semester 5</option>
+                            <option value="Semester 6">Semester 6</option>
+                            <option value="Semester 7">Semester 7</option>
+                            <option value="Semester 8">Semester 8</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Division</label>
+                        <select class="glass-input" id="sr-div" onchange="filterStudentReportList()">
+                            <option value="">All Divisions</option>
+                            <option value="Div A" selected>Div A</option>
+                            <option value="Div B">Div B</option>
+                            <option value="Div C">Div C</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label>Select Student</label>
+                        <select class="glass-input" id="sr-student-select" onchange="loadSelectedStudentReport()">
+                            <option value="">-- Choose a Student --</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="display: flex; align-items: flex-end;">
+                        <button class="btn btn-primary w-100" onclick="loadSelectedStudentReport()"><i class="fa-solid fa-magnifying-glass"></i> View Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Profile & Overview Card -->
+            <div id="student-report-details" style="display: none;">
+                <div class="glass-card mb-4" style="padding: 25px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+                        <div style="display: flex; align-items: center; gap: 20px;">
+                            <img id="sr-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150" alt="Student Avatar" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--primary);">
+                            <div>
+                                <h3 id="sr-student-name" style="margin-bottom: 4px; font-weight: 700;">Student Name</h3>
+                                <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.9rem; color: var(--text-muted);">
+                                    <span><i class="fa-solid fa-id-badge text-primary"></i> <strong id="sr-roll-no" class="text-white">CE5A01</strong></span>
+                                    <span><i class="fa-solid fa-building text-info"></i> <span id="sr-dept-name">CE</span></span>
+                                    <span><i class="fa-solid fa-layer-group text-purple"></i> <span id="sr-sem-div">Sem 5 - Div A</span></span>
+                                    <span><i class="fa-solid fa-envelope text-amber"></i> <span id="sr-email">email@college.edu</span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="text-align: right; min-width: 180px;">
+                            <span class="text-muted" style="font-size: 0.85rem;">Overall Attendance</span>
+                            <div id="sr-overall-pct" style="font-size: 2.2rem; font-weight: 800; color: var(--success);">88.5%</div>
+                            <span id="sr-status-pill" class="badge" style="background: rgba(16,185,129,0.2); color: #10B981; border: 1px solid rgba(16,185,129,0.4); padding: 4px 12px; border-radius: 20px;">Regular / Safe</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Subject-wise Breakdown Table -->
+                <div class="glass-card mb-4">
+                    <h4 class="mb-3" style="font-weight: 600;"><i class="fa-solid fa-book-open text-primary"></i> Subject-wise Attendance Breakdown</h4>
+                    <div class="table-responsive">
+                        <table class="glass-table" id="sr-subject-table">
+                            <thead>
+                                <tr>
+                                    <th>Subject Code & Name</th>
+                                    <th>Faculty In-Charge</th>
+                                    <th>Total Conducted</th>
+                                    <th>Attended</th>
+                                    <th>Missed</th>
+                                    <th>Percentage</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sr-subject-tbody">
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Quick Action to Dispatch Alert if low -->
+                <div class="glass-card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; padding: 15px 25px;">
+                    <div>
+                        <h5 style="margin: 0 0 4px 0; font-weight: 600;"><i class="fa-solid fa-bell text-warning"></i> Need to notify this student or parents?</h5>
+                        <p class="text-muted" style="font-size: 0.85rem; margin: 0;">Send instant attendance warning notifications directly to registered email and student inbox.</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openSendAlertModalForStudent()"><i class="fa-solid fa-paper-plane"></i> Send Attendance Alert</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 13. Department-wise Attendance Report View -->
+    <template id="tpl-department-report">
+        <div class="view-content fade-in" id="dept-report-wrapper">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 5px; font-weight: 700;">Department-wise Attendance Report</h3>
+                    <p class="text-muted" style="font-size: 0.9rem; margin: 0;">Comparative institutional overview across departments, semester cohorts, and faculty metrics.</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-outline" onclick="exportDeptReportPDF()"><i class="fa-solid fa-file-pdf text-danger"></i> Export PDF</button>
+                    <button class="btn btn-outline" onclick="exportDeptReportExcel()"><i class="fa-solid fa-file-excel text-success"></i> Export Excel</button>
+                    <button class="btn btn-outline" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+                </div>
+            </div>
+
+            <!-- Department Cards Grid -->
+            <div class="stats-grid mb-4" id="dept-cards-grid">
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Computer Engineering</div>
+                        <div class="stat-value text-blue" id="dept-stat-ce">84.2%</div>
+                        <div class="stat-subtitle text-muted">120 Students Enrolled</div>
+                    </div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-laptop-code"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">AI & Data Science</div>
+                        <div class="stat-value text-purple" id="dept-stat-aids">82.8%</div>
+                        <div class="stat-subtitle text-muted">95 Students Enrolled</div>
+                    </div>
+                    <div class="stat-icon purple"><i class="fa-solid fa-brain"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Electrical Engineering</div>
+                        <div class="stat-value text-amber" id="dept-stat-ee">76.5%</div>
+                        <div class="stat-subtitle text-muted">80 Students Enrolled</div>
+                    </div>
+                    <div class="stat-icon orange"><i class="fa-solid fa-bolt"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Mechanical Engineering</div>
+                        <div class="stat-value text-green" id="dept-stat-me">79.1%</div>
+                        <div class="stat-subtitle text-muted">110 Students Enrolled</div>
+                    </div>
+                    <div class="stat-icon green"><i class="fa-solid fa-gears"></i></div>
+                </div>
+            </div>
+
+            <!-- Department Breakdown Table -->
+            <div class="glass-card">
+                <h4 class="mb-3" style="font-weight: 600;"><i class="fa-solid fa-building-columns text-primary"></i> Academic Division Performance Table</h4>
+                <div class="table-responsive">
+                    <table class="glass-table" id="dept-report-table">
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Semester</th>
+                                <th>Total Enrolled</th>
+                                <th>Classes Conducted</th>
+                                <th>Avg Present %</th>
+                                <th>Defaulters (< 75%)</th>
+                                <th>Performance Indicator</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dept-report-tbody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- 14. Low Attendance Alerts & Defaulter Log View -->
+    <template id="tpl-low-attendance">
+        <div class="view-content fade-in" id="low-attendance-wrapper">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+                <div>
+                    <h3 style="margin-bottom: 5px; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation text-warning"></i> Low Attendance Alerts & Defaulter List</h3>
+                    <p class="text-muted" style="font-size: 0.9rem; margin: 0;">Identify students below statutory attendance thresholds and dispatch official notifications.</p>
+                </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="openBulkAlertModal()"><i class="fa-solid fa-paper-plane"></i> Send Alert to All Defaulters</button>
+                    <button class="btn btn-outline" onclick="exportLowAttendancePDF()"><i class="fa-solid fa-file-pdf text-danger"></i> Export PDF</button>
+                    <button class="btn btn-outline" onclick="exportLowAttendanceExcel()"><i class="fa-solid fa-file-excel text-success"></i> Export Excel</button>
+                    <a href="../satp/low_attendance.php" target="_blank" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-up-right-from-square"></i> Standalone Alerts Hub</a>
+                </div>
+            </div>
+
+            <!-- Threshold Configuration Bar -->
+            <div class="glass-card mb-4" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                        <label style="font-weight: 600; margin: 0; color: #fff;"><i class="fa-solid fa-sliders text-warning"></i> Attendance Alert Threshold:</label>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="number" class="glass-input" id="low-att-threshold" value="75" min="10" max="100" style="width: 85px; font-weight: 700; text-align: center;">
+                            <span style="font-weight: 700; color: var(--text-muted);">%</span>
+                            <button class="btn btn-primary btn-sm" onclick="applyLowAttendanceThreshold()"><i class="fa-solid fa-check"></i> Apply</button>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap; font-size: 0.85rem;">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; color: #EF4444;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Critical Risk (&lt; 60%)</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px; color: #F59E0B;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Moderate Risk (60% - 74%)</span>
+                        <span style="display: inline-flex; align-items: center; gap: 6px; color: #10B981;"><i class="fa-solid fa-circle" style="font-size: 8px;"></i> Safe Zone (&ge; 75%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid mb-4">
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Total Flagged Defaulters</div>
+                        <div class="stat-value text-danger" id="low-stat-total">0</div>
+                        <div class="stat-subtitle text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Below Threshold</div>
+                    </div>
+                    <div class="stat-icon red"><i class="fa-solid fa-user-xmark"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Critical Risk (&lt; 60%)</div>
+                        <div class="stat-value text-red" id="low-stat-critical">0</div>
+                        <div class="stat-subtitle text-danger"><i class="fa-solid fa-radiation"></i> Immediate Action</div>
+                    </div>
+                    <div class="stat-icon red"><i class="fa-solid fa-fire"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Moderate Risk (60-74%)</div>
+                        <div class="stat-value text-warning" id="low-stat-moderate">0</div>
+                        <div class="stat-subtitle text-amber"><i class="fa-solid fa-bell"></i> Warning Advised</div>
+                    </div>
+                    <div class="stat-icon orange"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                </div>
+                <div class="stat-card glass-card">
+                    <div class="stat-details">
+                        <div class="stat-label">Alerts Sent Today</div>
+                        <div class="stat-value text-blue" id="low-stat-alerts-sent">0</div>
+                        <div class="stat-subtitle text-blue"><i class="fa-solid fa-paper-plane"></i> Dispatched</div>
+                    </div>
+                    <div class="stat-icon blue"><i class="fa-solid fa-paper-plane"></i></div>
+                </div>
+            </div>
+
+            <!-- Defaulter Table -->
+            <div class="glass-card">
+                <div class="workspace-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin: 0; font-weight: 600;"><i class="fa-solid fa-list-check text-warning"></i> Flagged Defaulters List</h4>
+                    <span class="badge" id="low-att-count-badge" style="background: rgba(239, 68, 68, 0.15); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 10px; border-radius: 20px;">0 Students</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="glass-table" id="low-attendance-table">
+                        <thead>
+                            <tr>
+                                <th>Roll No</th>
+                                <th>Student Name</th>
+                                <th>Department</th>
+                                <th>Semester & Div</th>
+                                <th>Attended / Total</th>
+                                <th>Percentage</th>
+                                <th>Risk Category</th>
+                                <th>Notification Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="low-attendance-tbody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- Toast Notification Container -->
     <div id="toast-container" class="toast-container"></div>
+
+    <!-- Send Alert / Notification Modal -->
+    <div class="modal-overlay" id="send-alert-modal">
+        <div class="modal-content glass-card" style="max-width: 580px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-paper-plane text-primary"></i> Dispatch Attendance Alert</h3>
+                <button class="close-modal" onclick="closeSendAlertModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="alert-form" onsubmit="event.preventDefault(); submitSendAlert();">
+                    <input type="hidden" id="alert-recipient-type" value="single">
+                    <input type="hidden" id="alert-student-id" value="">
+                    <input type="hidden" id="alert-student-roll" value="">
+                    <input type="hidden" id="alert-student-email" value="">
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Recipient(s)</label>
+                        <input type="text" class="glass-input w-100" id="alert-recipient-display" readonly style="background: rgba(255,255,255,0.05); color: var(--primary);">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Alert Title / Subject</label>
+                        <input type="text" class="glass-input w-100" id="alert-subject" required value="Urgent: Low Attendance Warning Notice">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Notification Channels</label>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 5px;">
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="chan-email" checked> <i class="fa-solid fa-envelope text-info"></i> Email Notice
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="chan-inapp" checked> <i class="fa-solid fa-bell text-warning"></i> Portal Notification
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <input type="checkbox" id="chan-sms" checked> <i class="fa-solid fa-comment-sms text-success"></i> Parent SMS Alert
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label>Message Content</label>
+                        <textarea class="glass-input w-100" id="alert-message" rows="4" style="resize: vertical; font-family: inherit;" required>Dear Student/Parent, your current attendance is below the mandatory 75% threshold. Please meet your faculty advisor and improve attendance immediately to avoid examination debarment.</textarea>
+                    </div>
+
+                    <div style="font-size: 0.85em; color: var(--text-muted); padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid var(--border-color);">
+                        <i class="fa-solid fa-shield-halved text-success"></i> Official institutional notification log will be stamped with timestamp and faculty identifier.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeSendAlertModal()">Cancel</button>
+                <button class="btn btn-primary" id="btn-dispatch-alert" onclick="submitSendAlert()"><i class="fa-solid fa-paper-plane"></i> Send Alert Now</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Logout Confirmation Modal -->
     <div class="modal-overlay" id="logout-modal">
