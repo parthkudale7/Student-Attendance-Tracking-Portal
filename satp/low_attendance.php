@@ -103,7 +103,7 @@ require_once __DIR__ . '/includes/sidebar.php';
             <div class="card-header-flex">
                 <div class="card-title text-danger"><i class="bi bi-person-x-fill"></i> Flagged Defaulter List</div>
                 <div class="d-flex gap-2">
-                    <button onclick="alert('Bulk SMS and Email alerts queued for dispatch to all flagged guardians.')"
+                    <button onclick="if(typeof showToast === 'function') { showToast('Bulk SMS and Email alerts queued for dispatch to all flagged guardians.'); } else { alert('Bulk SMS and Email alerts queued for dispatch to all flagged guardians.'); }"
                         class="btn-custom btn-danger-custom btn-sm">
                         <i class="bi bi-send-fill"></i> Send Bulk Alerts
                     </button>

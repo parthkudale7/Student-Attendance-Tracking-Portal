@@ -803,8 +803,9 @@ function exportToExcel(tableId, filename = 'attendance_report') {
     if (window.XLSX) {
         const wb = XLSX.utils.table_to_book(table, { sheet: "Report Data" });
         XLSX.writeFile(wb, `${filename}_${new Date().toISOString().slice(0,10)}.xlsx`);
+        if (typeof showToast === 'function') showToast('Report exported to Excel successfully!');
     } else {
-        alert("Excel export library initializing...");
+        if (typeof showToast === 'function') showToast('Excel export library initializing...', 'info');
     }
 }
 
@@ -920,7 +921,7 @@ function handlePasswordChange(e) {
     const confirmPass = document.getElementById('confirmPass').value;
 
     if (newPass !== confirmPass) {
-        alert('New passwords do not match!');
+        showToast('New passwords do not match!');
         return;
     }
 

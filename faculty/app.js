@@ -1102,32 +1102,92 @@ async function submitEdit() {
     }
 }
 
-// --- UI Utilities ---
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
+// --- UI Utilities & In-App Toast System ---
+function showToast(message, type = 'success', title = '') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
-    const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
-    
+    const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+    toast.className = `toast ${safeType}`;
+
+    const icons = {
+        success: 'fa-solid fa-circle-check',
+        error: 'fa-solid fa-circle-xmark',
+        warning: 'fa-solid fa-triangle-exclamation',
+        info: 'fa-solid fa-circle-info'
+    };
+
+    const defaultTitles = {
+        success: 'Success',
+        error: 'Error',
+        warning: 'Notice',
+        info: 'Information'
+    };
+
+    const displayTitle = title || defaultTitles[safeType] || 'Notification';
+    const duration = safeType === 'error' ? 4500 : 3500;
+
     toast.innerHTML = `
-        <i class="fa-solid ${icon}"></i>
-        <span>${message}</span>
+        <div class="toast-icon">
+            <i class="${icons[safeType]}"></i>
+        </div>
+        <div class="toast-content">
+            <span class="toast-title">${displayTitle}</span>
+            <span class="toast-message">${message}</span>
+        </div>
+        <button class="toast-close" type="button" aria-label="Close notification">&times;</button>
+        <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
     `;
-    
-    container.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('show');
-    }, 10);
-    
-    setTimeout(() => {
-        toast.classList.remove('show');
+
+    let dismissTimeout;
+    const dismiss = () => {
+        if (toast.classList.contains('hiding')) return;
+        toast.classList.add('hiding');
+        clearTimeout(dismissTimeout);
         setTimeout(() => {
-            toast.remove();
-        }, 300);
-    }, 3000);
+            if (toast.parentElement) toast.parentElement.removeChild(toast);
+        }, 320);
+    };
+
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        dismiss();
+    };
+
+    toast.onclick = (e) => {
+        if (!e.target.closest('.toast-close')) {
+            dismiss();
+        }
+    };
+
+    container.appendChild(toast);
+    dismissTimeout = setTimeout(dismiss, duration);
 }
+
+// Override native window.alert to seamlessly redirect all alerts to in-app toast
+window.alert = function(msg) {
+    if (typeof msg === 'string') {
+        const lower = msg.toLowerCase();
+        if (lower.includes('success') || lower.includes('enrolled') || lower.includes('updated') || lower.includes('saved')) {
+            showToast(msg, 'success');
+        } else if (lower.includes('error') || lower.includes('failed') || lower.includes('cannot') || lower.includes('invalid')) {
+            showToast(msg, 'error');
+        } else if (lower.includes('warn') || lower.includes('select') || lower.includes('please fill') || lower.includes('required')) {
+            showToast(msg, 'warning');
+        } else {
+            showToast(msg, 'info');
+        }
+    } else {
+        showToast(String(msg), 'info');
+    }
+};
 
 // --- Top Navigation & Profile Features ---
 
@@ -1423,7 +1483,7 @@ window.searchEditAttendance = async function() {
     const lecture = document.getElementById('edit-lecture').value;
 
     if (!date || !dept || !sem || !subject || !lecture) {
-        alert('Validation Error: Please select Date, Department, Semester, Subject, and Lecture Number.');
+        showToast('Please select Date, Department, Semester, Subject, and Lecture Number.', 'warning');
         return;
     }
 
@@ -1434,7 +1494,7 @@ window.searchEditAttendance = async function() {
         
         if (!res.ok) {
             const result = await res.json().catch(() => ({}));
-            alert(result.error || 'No records found for the selected criteria.');
+            showToast(result.error || 'No records found for the selected criteria.', 'info');
             document.getElementById('edit-workspace-main').style.display = 'none';
             return;
         }
@@ -1469,7 +1529,7 @@ window.searchEditAttendance = async function() {
         if(typeof renderModHistory === 'function') renderModHistory();
         
     } catch(err) {
-        alert('Error fetching attendance records from database.');
+        showToast('Error fetching attendance records from database.', 'error');
         console.error(err);
     }
 }
@@ -1629,7 +1689,7 @@ window.changeSingleStudentStatus = function(index, newStatus, selectElement) {
 window.bulkActionEdit = function(newStatus) {
     const selected = document.querySelectorAll('.edit-student-chk:checked');
     if (selected.length === 0) {
-        alert('Select at least one student.');
+        showToast('Select at least one student.', 'warning');
         return;
     }
     
@@ -1680,7 +1740,7 @@ window.pushEditHistory = function(changes) {
 
 window.undoLastEditChange = function() {
     if (editHistoryStack.length === 0) {
-        alert('No recent changes to undo.');
+        showToast('No recent changes to undo.', 'info');
         return;
     }
     
@@ -1698,12 +1758,12 @@ window.undoLastEditChange = function() {
 
 window.saveEditChanges = async function() {
     if (editLoadedStudents.length === 0) {
-        alert('No data to save.');
+        showToast('No data to save.', 'warning');
         return;
     }
     
     if (editHistoryStack.length === 0) {
-        alert('No changes made to save.');
+        showToast('No changes made to save.', 'info');
         return;
     }
     
@@ -1750,7 +1810,7 @@ window.saveEditChanges = async function() {
     });
     
     if (requests.length === 0) {
-        alert('No actual changes left to save.');
+        showToast('No actual changes left to save.', 'info');
         return;
     }
     
@@ -1764,14 +1824,14 @@ window.saveEditChanges = async function() {
         const result = await res.json();
         
         if (res.ok && result.success) {
-            alert('Attendance records updated successfully!');
+            showToast('Attendance records updated successfully!', 'success');
             editHistoryStack = [];
             searchEditAttendance();
         } else {
-            alert(result.error || 'Failed to update attendance records.');
+            showToast(result.error || 'Failed to update attendance records.', 'error');
         }
     } catch(err) {
-        alert('Network error while saving edits.');
+        showToast('Network error while saving edits.', 'error');
         console.error(err);
     }
 }
@@ -1797,7 +1857,7 @@ window.updateEditSummaries = function() {
 // Validation Action Handler
 window.handleValidationAction = async function(action, recordId) {
     if (action === 'view') {
-        alert('Viewing details is not fully implemented in this demo.');
+        showToast('Viewing details is not fully implemented in this demo.', 'info');
         return;
     }
 
@@ -1846,7 +1906,7 @@ document.addEventListener('click', function(event) {
 window.exportAttendance = function(format) {
     document.getElementById('export-dropdown').classList.remove('show');
     if (editLoadedStudents.length === 0) {
-        alert('No data to export.');
+        showToast('No data to export.', 'warning');
         return;
     }
     
@@ -1871,7 +1931,7 @@ window.exportAttendance = function(format) {
 
     if (format === 'pdf') {
         if (!window.jspdf || !window.jspdf.jsPDF) {
-            alert('PDF library not loaded. Please try again later.');
+            showToast('PDF library not loaded. Please try again later.', 'error');
             return;
         }
         const { jsPDF } = window.jspdf;
@@ -1913,9 +1973,10 @@ window.exportAttendance = function(format) {
         });
         
         doc.save('Attendance_Export.pdf');
+        showToast('Attendance report PDF generated!', 'success');
     } else if (format === 'excel') {
         if (!window.XLSX) {
-            alert('Excel library not loaded.');
+            showToast('Excel library not loaded.', 'error');
             return;
         }
         const wb = XLSX.utils.book_new();
@@ -2214,11 +2275,11 @@ async function loadStudentManagement() {
 // Export Student Roster to Excel
 function exportStudentRosterExcel() {
     if (!currentLoadedStudents || currentLoadedStudents.length === 0) {
-        alert('No student records available to export.');
+        showToast('No student records available to export.', 'warning');
         return;
     }
     if (typeof XLSX === 'undefined') {
-        alert('Excel Export library is loading, please try again.');
+        showToast('Excel Export library is loading, please try again.', 'info');
         return;
     }
     const data = currentLoadedStudents.map(st => ({
@@ -2236,6 +2297,7 @@ function exportStudentRosterExcel() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Students_Roster');
     XLSX.writeFile(wb, `Student_Roster_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('Student roster exported to Excel successfully!', 'success');
 }
 
 // --- 4.2 Student Registration Portal Logic ---
@@ -2285,7 +2347,7 @@ async function handleRegistrationSubmit(e) {
     const submitBtn = document.getElementById('reg-submit-btn');
 
     if (!name || !roll || !email || !dept || !sem || !div) {
-        alert('Please fill in all required fields.');
+        showToast('Please fill in all required fields.', 'warning');
         return;
     }
 
@@ -2314,16 +2376,16 @@ async function handleRegistrationSubmit(e) {
         const data = await res.json();
 
         if (data.success) {
-            alert(`🎉 Success! ${name} has been enrolled.\n\nRoll No: ${roll}\nDepartment: ${dept}\nLogin Password: ${roll}`);
+            showToast(`🎉 Success! ${name} enrolled (Roll: ${roll}, Dept: ${dept})`, 'success');
             resetRegForm();
             loadRecentRegistrations();
             if (typeof loadDashboardStats === 'function') loadDashboardStats();
         } else {
-            alert('Registration Failed: ' + (data.message || 'Unknown error occurred'));
+            showToast('Registration Failed: ' + (data.message || 'Unknown error occurred'), 'error');
         }
     } catch (err) {
         console.error('Registration Error:', err);
-        alert('An error occurred while submitting student registration.');
+        showToast('An error occurred while submitting student registration.', 'error');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -2444,6 +2506,8 @@ async function handleQuickPhotoUpload(e) {
     const file = e.target.files[0];
     if (!file || !targetQuickPhotoStudentId) return;
 
+    showToast('Uploading profile photo...', 'info');
+
     const formData = new FormData();
     formData.append('action', 'update');
     formData.append('student_id', targetQuickPhotoStudentId);
@@ -2467,16 +2531,16 @@ async function handleQuickPhotoUpload(e) {
             });
             const uploadResult = await uploadRes.json();
             if (uploadResult.success) {
-                alert('Profile photo updated successfully!');
+                showToast('Profile photo updated successfully!', 'success');
                 loadStudentManagement();
                 loadStudentProfilesGallery();
             } else {
-                alert(uploadResult.message || 'Failed to update profile photo.');
+                showToast(uploadResult.message || 'Failed to update profile photo.', 'error');
             }
         }
     } catch (err) {
         console.error(err);
-        alert('An error occurred during photo upload.');
+        showToast('An error occurred during photo upload.', 'error');
     }
 }
 
@@ -2543,7 +2607,7 @@ async function submitAddStudent() {
         const data = await res.json();
         
         if (data.success) {
-            alert(data.message);
+            showToast(data.message || (id ? 'Student updated successfully!' : 'Student added successfully!'), 'success');
             closeAddStudentModal();
             loadStudentManagement();
             loadStudentProfilesGallery();
@@ -2551,11 +2615,11 @@ async function submitAddStudent() {
                 loadDashboardStats();
             }
         } else {
-            alert(data.message || 'Failed to save student');
+            showToast(data.message || 'Failed to save student', 'error');
         }
     } catch (err) {
         console.error(err);
-        alert('An error occurred while saving the student.');
+        showToast('An error occurred while saving the student.', 'error');
     } finally {
         if (btn) {
             btn.disabled = false;
@@ -2586,31 +2650,32 @@ async function editStudent(id) {
         }
     } catch (err) {
         console.error('Error fetching student details:', err);
-        alert('Could not load student details.');
+        showToast('Could not load student details.', 'error');
     }
 }
 
 async function deleteStudent(id, name) {
-    if (!confirm(`Are you sure you want to delete ${name}?\n\nThis will also remove all their attendance records and login access. This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to delete ${name}?\n\nThis will also remove all their attendance records and login access.`)) {
         return;
     }
     
     try {
+        showToast('Deleting student record...', 'info');
         const res = await fetch(`../api/students_crud.php?action=delete&student_id=${id}`, {
             method: 'POST'
         });
         const result = await res.json();
         
         if (result.success) {
-            alert('Student deleted successfully.');
+            showToast('Student deleted successfully.', 'success');
             loadStudentManagement();
             loadStudentProfilesGallery();
         } else {
-            alert(result.message || 'Failed to delete student.');
+            showToast(result.message || 'Failed to delete student.', 'error');
         }
     } catch (err) {
         console.error('Error deleting student:', err);
-        alert('An error occurred while deleting the student.');
+        showToast('An error occurred while deleting the student.', 'error');
     }
 }
 
@@ -2642,7 +2707,7 @@ async function viewStudentProfile(id) {
         }
     } catch (err) {
         console.error('Error fetching student profile:', err);
-        alert('Could not load student profile.');
+        showToast('Could not load student profile.', 'error');
     }
 }
 

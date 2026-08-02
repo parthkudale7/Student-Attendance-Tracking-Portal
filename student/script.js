@@ -392,3 +392,91 @@ window.navigateTo = function(targetId) {
         navLink.click();
     }
 };
+
+// --- In-App Toast System for Student Portal ---
+function showToast(message, type = 'success', title = '') {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    const safeType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+    toast.className = `toast ${safeType}`;
+
+    const icons = {
+        success: 'fa-solid fa-circle-check',
+        error: 'fa-solid fa-circle-xmark',
+        warning: 'fa-solid fa-triangle-exclamation',
+        info: 'fa-solid fa-circle-info'
+    };
+
+    const defaultTitles = {
+        success: 'Success',
+        error: 'Error',
+        warning: 'Notice',
+        info: 'Information'
+    };
+
+    const displayTitle = title || defaultTitles[safeType] || 'Notification';
+    const duration = safeType === 'error' ? 4500 : 3500;
+
+    toast.innerHTML = `
+        <div class="toast-icon">
+            <i class="${icons[safeType]}"></i>
+        </div>
+        <div class="toast-content">
+            <span class="toast-title">${displayTitle}</span>
+            <span class="toast-message">${message}</span>
+        </div>
+        <button class="toast-close" type="button" aria-label="Close notification">&times;</button>
+        <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
+    `;
+
+    let dismissTimeout;
+    const dismiss = () => {
+        if (toast.classList.contains('hiding')) return;
+        toast.classList.add('hiding');
+        clearTimeout(dismissTimeout);
+        setTimeout(() => {
+            if (toast.parentElement) toast.parentElement.removeChild(toast);
+        }, 320);
+    };
+
+    const closeBtn = toast.querySelector('.toast-close');
+    if (closeBtn) closeBtn.onclick = (e) => {
+        e.stopPropagation();
+        dismiss();
+    };
+
+    toast.onclick = (e) => {
+        if (!e.target.closest('.toast-close')) {
+            dismiss();
+        }
+    };
+
+    container.appendChild(toast);
+    dismissTimeout = setTimeout(dismiss, duration);
+}
+
+// Override native window.alert to seamlessly redirect all alerts to in-app toast
+window.alert = function(msg) {
+    if (typeof msg === 'string') {
+        const lower = msg.toLowerCase();
+        if (lower.includes('success') || lower.includes('enrolled') || lower.includes('updated') || lower.includes('saved')) {
+            showToast(msg, 'success');
+        } else if (lower.includes('error') || lower.includes('failed') || lower.includes('cannot') || lower.includes('invalid')) {
+            showToast(msg, 'error');
+        } else if (lower.includes('warn') || lower.includes('select') || lower.includes('please fill') || lower.includes('required')) {
+            showToast(msg, 'warning');
+        } else {
+            showToast(msg, 'info');
+        }
+    } else {
+        showToast(String(msg), 'info');
+    }
+};
+window.showToast = showToast;
