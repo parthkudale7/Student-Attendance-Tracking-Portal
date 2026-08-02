@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -613,48 +613,48 @@
             </div>
 
             <!-- Filters Section -->
-            <div class="filters-card glass-card premium-filter-panel" style="padding: 24px; border-radius: 18px;">
-                <div class="filters-grid premium-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; align-items: end;">
-                    <div class="form-group premium-group mb-0">
+            <div class="filters-card glass-card premium-filter-panel" style="padding: 22px 24px; border-radius: 18px; width: 100%; box-sizing: border-box;">
+                <div class="filters-flex-container" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; width: 100%;">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 180px; min-width: 160px;">
                         <label>Date Range</label>
                         <div class="date-range-wrapper" style="position: relative;">
                             <i class="fa-regular fa-calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
                             <input type="text" class="glass-input date-range-input" id="hist-date-range" placeholder="01/07/2025 - 27/07/2026" style="padding-left: 38px; width: 100%;">
                         </div>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 160px; min-width: 140px;">
                         <label>Department</label>
-                        <select class="glass-input" id="hist-dept" onchange="window.historyLogic.onDeptChange()">
+                        <select class="glass-input" id="hist-dept" onchange="window.historyLogic.onDeptChange()" style="width: 100%;">
                             <option value="">All Departments</option>
                         </select>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 140px; min-width: 130px;">
                         <label>Semester</label>
-                        <select class="glass-input" id="hist-sem" onchange="window.historyLogic.onSemChange()">
+                        <select class="glass-input" id="hist-sem" onchange="window.historyLogic.onSemChange()" style="width: 100%;">
                             <option value="">All Semesters</option>
                         </select>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 120px; min-width: 110px;">
                         <label>Division</label>
-                        <select class="glass-input" id="hist-div">
+                        <select class="glass-input" id="hist-div" style="width: 100%;">
                             <option value="">All Divisions</option>
                         </select>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 180px; min-width: 160px;">
                         <label>Subject</label>
-                        <select class="glass-input" id="hist-subject">
+                        <select class="glass-input" id="hist-subject" style="width: 100%;">
                             <option value="">All Subjects</option>
                         </select>
                     </div>
-                    <div class="form-group filter-actions-premium mb-0" style="display: flex; gap: 12px; grid-column: span 1;">
-                        <button class="btn btn-primary premium-btn-blue" onclick="window.historyLogic.applyFilters()" style="flex: 1;"><i class="fa-solid fa-filter"></i> Apply Filters</button>
-                        <button class="btn btn-outline premium-btn-reset" onclick="window.historyLogic.resetFilters()"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    <div class="form-group filter-actions-premium mb-0" style="flex: 0 0 auto; display: flex; gap: 10px; align-items: flex-end;">
+                        <button class="btn btn-primary premium-btn-blue" onclick="window.historyLogic.applyFilters()" style="white-space: nowrap; padding: 10px 18px;"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                        <button class="btn btn-outline premium-btn-reset" onclick="window.historyLogic.resetFilters()" style="white-space: nowrap; padding: 10px 16px;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
                     </div>
                 </div>
             </div>
 
             <!-- History Table Container -->
-            <div class="attendance-table-container glass-card premium-table-card" id="hist-table-container" style="display: flex; flex-direction: column; overflow: visible; border-radius: 18px; padding: 0;">
+            <div class="attendance-table-container glass-card premium-table-card" id="hist-table-container" style="display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; padding: 0; width: 100%; max-width: 100%;">
                 
                 <!-- Table Header Actions -->
                 <div class="table-header-actions" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -668,25 +668,25 @@
                     </div>
                 </div>
 
-                <div class="table-scroll" style="max-height: 550px; overflow-y: auto;">
-                    <table class="glass-table premium-history-table" style="width: 100%; border-collapse: collapse; min-width: 1400px;">
-                        <thead style="position: sticky; top: 0; z-index: 2; background: rgba(7, 26, 58, 0.95); backdrop-filter: blur(10px);">
+                <div class="table-scroll" style="max-height: 550px; overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; display: block; position: relative;">
+                    <table class="glass-table premium-history-table" style="width: 100%; border-collapse: collapse; min-width: 1950px;">
+                        <thead style="position: sticky; top: 0; z-index: 2; background: rgba(7, 26, 58, 0.98); backdrop-filter: blur(10px);">
                             <tr>
-                                <th>Date</th>
-                                <th>Department</th>
-                                <th>Semester</th>
-                                <th>Division</th>
-                                <th>Subject</th>
-                                <th>Lecture No.</th>
-                                <th>Roll No.</th>
-                                <th>Student Name</th>
-                                <th>Attendance Status</th>
-                                <th>Validation Status</th>
-                                <th>Faculty</th>
-                                <th>Validated By</th>
-                                <th>Validation Date & Time</th>
-                                <th>Remarks</th>
-                                <th>Actions</th>
+                                <th style="min-width: 110px; white-space: nowrap;">Date</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Department</th>
+                                <th style="min-width: 100px; white-space: nowrap;">Semester</th>
+                                <th style="min-width: 90px; white-space: nowrap;">Division</th>
+                                <th style="min-width: 220px; white-space: nowrap;">Subject</th>
+                                <th style="min-width: 110px; white-space: nowrap;">Lecture No.</th>
+                                <th style="min-width: 110px; white-space: nowrap;">Roll No.</th>
+                                <th style="min-width: 160px; white-space: nowrap;">Student Name</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Attendance Status</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Validation Status</th>
+                                <th style="min-width: 130px; white-space: nowrap;">Faculty</th>
+                                <th style="min-width: 130px; white-space: nowrap;">Validated By</th>
+                                <th style="min-width: 190px; white-space: nowrap;">Validation Date & Time</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Remarks</th>
+                                <th style="min-width: 80px; text-align: center; white-space: nowrap;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="hist-tbody">

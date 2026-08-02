@@ -140,14 +140,23 @@ const CyberToast = {
                     .then(response => response.json())
                     .then(result => {
                         if (result.success) {
-                            // Save session using sessionStorage for frontend UI state
+                            // Save session using sessionStorage and localStorage for frontend UI state
                             if (result.user) {
-                                sessionStorage.setItem('user_session', JSON.stringify({
-                                    user_id: result.user.id,
+                                const sessionObj = {
+                                    user_id: result.user.user_id || result.user.id,
+                                    id: result.user.id,
                                     role: result.user.role,
                                     name: result.user.name,
+                                    email: result.user.email,
+                                    designation: result.user.designation || '',
+                                    department: result.user.department || '',
+                                    qualification: result.user.qualification || '',
+                                    mobile: result.user.mobile || '',
+                                    avatar: result.user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(result.user.name)}&background=4F7CFF&color=fff`,
                                     login_time: Date.now()
-                                }));
+                                };
+                                sessionStorage.setItem('user_session', JSON.stringify(sessionObj));
+                                localStorage.setItem('currentUser', JSON.stringify(sessionObj));
                             }
 
                             // Show full screen overlay

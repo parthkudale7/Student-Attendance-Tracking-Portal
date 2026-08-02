@@ -353,20 +353,48 @@ const facultyDB = [
     }
 ];
 
-let currentUser = facultyDB[0]; // Default to first mock user for UI data
+let currentUser = {
+    name: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name) ? window.PHP_USER.name : 'Faculty Member',
+    email: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.email) ? window.PHP_USER.email : '',
+    role: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.designation) ? window.PHP_USER.designation : 'Faculty Member',
+    designation: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.designation) ? window.PHP_USER.designation : 'Faculty Member',
+    department: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.department) ? window.PHP_USER.department : 'Computer Science',
+    qualification: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.qualification) ? window.PHP_USER.qualification : '',
+    id: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.id) ? window.PHP_USER.id : 'FAC1001',
+    mobile: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.mobile) ? window.PHP_USER.mobile : '',
+    avatar: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.avatar) ? window.PHP_USER.avatar : 'https://ui-avatars.com/api/?name=Faculty&background=4F7CFF&color=fff',
+    subjects: ['Data Structures', 'Database Systems', 'Algorithms']
+};
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Load User from LocalStorage if exists, else use default mock user
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-        } catch (e) {
-            console.error("Invalid user data", e);
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        }
-    } else {
+    // 1. High priority: Check PHP_USER from database session
+    if (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name) {
+        currentUser = {
+            id: window.PHP_USER.id || 'FAC1001',
+            name: window.PHP_USER.name,
+            email: window.PHP_USER.email,
+            role: window.PHP_USER.designation || 'Faculty Member',
+            designation: window.PHP_USER.designation || 'Faculty Member',
+            department: window.PHP_USER.department || 'Computer Science',
+            qualification: window.PHP_USER.qualification || '',
+            mobile: window.PHP_USER.mobile || '',
+            avatar: window.PHP_USER.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(window.PHP_USER.name)}&background=4F7CFF&color=fff`,
+            subjects: ['Data Structures', 'Database Systems', 'Algorithms']
+        };
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+        // Fallback to local storage if available
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed && parsed.name) {
+                    currentUser = parsed;
+                }
+            } catch (e) {
+                console.error("Invalid user data", e);
+            }
+        }
     }
 
     // Initialization
@@ -549,22 +577,51 @@ function initViewLogic(viewId) {
     }
     
     if (viewId === 'my-profile') {
-        const user = JSON.parse(localStorage.getItem('currentUser'));
-        document.getElementById('my-profile-name').textContent = user.name;
-        document.getElementById('my-profile-designation').textContent = user.role;
-        document.getElementById('my-profile-id').textContent = user.id || 'FAC1001';
-        document.getElementById('my-profile-dept').textContent = user.role;
-        document.getElementById('my-profile-email').textContent = user.email;
-        document.getElementById('my-profile-mobile').textContent = user.mobile || '+1 234 567 8900';
-        document.getElementById('my-profile-img').src = user.avatar;
+        const user = (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name)
+            ? window.PHP_USER 
+            : (JSON.parse(localStorage.getItem('currentUser')) || currentUser);
+            
+        const nameEl = document.getElementById('my-profile-name');
+        const desigEl = document.getElementById('my-profile-designation');
+        const gridDesigEl = document.getElementById('my-profile-grid-desig');
+        const idEl = document.getElementById('my-profile-id');
+        const deptEl = document.getElementById('my-profile-dept');
+        const qualEl = document.getElementById('my-profile-qualification');
+        const emailEl = document.getElementById('my-profile-email');
+        const mobileEl = document.getElementById('my-profile-mobile');
+        const imgEl = document.getElementById('my-profile-img');
+
+        if (nameEl) nameEl.textContent = user.name;
+        if (desigEl) desigEl.textContent = user.designation || user.role || 'Faculty Member';
+        if (gridDesigEl) gridDesigEl.textContent = user.designation || user.role || 'Faculty Member';
+        if (idEl) idEl.textContent = user.id || 'FAC1001';
+        if (deptEl) deptEl.textContent = user.department || 'Computer Science';
+        if (qualEl) qualEl.textContent = user.qualification || 'Not Specified';
+        if (emailEl) emailEl.textContent = user.email || '-';
+        if (mobileEl) mobileEl.textContent = user.mobile || user.phone || 'Not Specified';
+        if (imgEl && user.avatar) imgEl.src = user.avatar;
     }
     
     if (viewId === 'edit-profile') {
-        const user = JSON.parse(localStorage.getItem('currentUser'));
-        document.getElementById('edit-name').value = user.name;
-        document.getElementById('edit-email').value = user.email;
-        document.getElementById('edit-mobile').value = user.mobile || '';
-        document.getElementById('edit-picture').value = user.avatar;
+        const user = (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name)
+            ? window.PHP_USER 
+            : (JSON.parse(localStorage.getItem('currentUser')) || currentUser);
+            
+        const editName = document.getElementById('edit-name');
+        const editDept = document.getElementById('edit-department');
+        const editDesig = document.getElementById('edit-designation');
+        const editQual = document.getElementById('edit-qualification');
+        const editEmail = document.getElementById('edit-email');
+        const editMobile = document.getElementById('edit-mobile');
+        const editPicture = document.getElementById('edit-picture');
+
+        if (editName) editName.value = user.name || '';
+        if (editDept) editDept.value = user.department || '';
+        if (editDesig) editDesig.value = user.designation || user.role || '';
+        if (editQual) editQual.value = user.qualification || '';
+        if (editEmail) editEmail.value = user.email || '';
+        if (editMobile) editMobile.value = user.mobile || user.phone || '';
+        if (editPicture) editPicture.value = user.avatar || '';
     }
 }
 
@@ -889,15 +946,21 @@ function initTopNav() {
 }
 
 function updateTopNavProfile() {
-    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const user = (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name)
+        ? window.PHP_USER 
+        : (JSON.parse(localStorage.getItem('currentUser')) || currentUser);
     if (!user) return;
     const nameEl = document.getElementById('nav-profile-name');
     const roleEl = document.getElementById('nav-profile-role');
     const imgEl = document.getElementById('nav-profile-img');
     
-    if(nameEl) nameEl.textContent = user.name;
-    if(roleEl) roleEl.textContent = user.role;
-    if(imgEl) imgEl.src = user.avatar;
+    if (nameEl) nameEl.textContent = user.name;
+    if (roleEl) {
+        const desig = user.designation || user.role || 'Faculty';
+        const dept = user.department ? ` • ${user.department}` : '';
+        roleEl.textContent = `${desig}${dept}`;
+    }
+    if (imgEl && user.avatar) imgEl.src = user.avatar;
 }
 
 function initDropdowns() {
@@ -1739,15 +1802,24 @@ document.addEventListener('click', (e) => {
 // --- Profile Forms ---
 window.saveProfile = function(e) {
     e.preventDefault();
-    const user = JSON.parse(localStorage.getItem('currentUser'));
+    const user = JSON.parse(localStorage.getItem('currentUser')) || currentUser;
     user.name = document.getElementById('edit-name').value;
     user.email = document.getElementById('edit-email').value;
     user.mobile = document.getElementById('edit-mobile').value;
+    const qualEl = document.getElementById('edit-qualification');
+    if (qualEl) user.qualification = qualEl.value;
     
     const newPic = document.getElementById('edit-picture').value;
     if (newPic) user.avatar = newPic;
     
     localStorage.setItem('currentUser', JSON.stringify(user));
+    if (typeof window.PHP_USER !== 'undefined' && window.PHP_USER) {
+        window.PHP_USER.name = user.name;
+        window.PHP_USER.email = user.email;
+        window.PHP_USER.mobile = user.mobile;
+        window.PHP_USER.qualification = user.qualification;
+        window.PHP_USER.avatar = user.avatar;
+    }
     updateTopNavProfile();
     showToast('Profile updated successfully');
     addNotification('Profile Updated', 'Your profile details were updated.');

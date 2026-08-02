@@ -146,8 +146,30 @@ window.historyLogic = (function() {
         const dept = document.getElementById('hist-dept') ? document.getElementById('hist-dept').value : '';
         const div = document.getElementById('hist-div') ? document.getElementById('hist-div').value : '';
         const subject = document.getElementById('hist-subject') ? document.getElementById('hist-subject').value : '';
-        const fromDate = document.getElementById('hist-from-date') ? document.getElementById('hist-from-date').value : '';
-        const toDate = document.getElementById('hist-to-date') ? document.getElementById('hist-to-date').value : '';
+        let fromDate = document.getElementById('hist-from-date') ? document.getElementById('hist-from-date').value : '';
+        let toDate = document.getElementById('hist-to-date') ? document.getElementById('hist-to-date').value : '';
+        
+        const dateRangeVal = document.getElementById('hist-date-range') ? document.getElementById('hist-date-range').value.trim() : '';
+        if (dateRangeVal) {
+            const parts = dateRangeVal.split('-').map(s => s.trim());
+            function parseCustomDate(str) {
+                if (!str) return '';
+                if (str.includes('/')) {
+                    const segs = str.split('/');
+                    if (segs.length === 3) {
+                        return `${segs[2]}-${segs[1].padStart(2, '0')}-${segs[0].padStart(2, '0')}`;
+                    }
+                }
+                return str;
+            }
+            if (parts.length === 2) {
+                fromDate = parseCustomDate(parts[0]);
+                toDate = parseCustomDate(parts[1]);
+            } else if (parts.length === 1 && parts[0]) {
+                fromDate = parseCustomDate(parts[0]);
+            }
+        }
+
         filteredRecords = [];
         allRecords.forEach(record => {
             let match = true;
@@ -191,6 +213,7 @@ window.historyLogic = (function() {
         if(document.getElementById('hist-div')) document.getElementById('hist-div').value = '';
         if(document.getElementById('hist-subject')) document.getElementById('hist-subject').value = '';
         updateDependentFilters();
+        if(document.getElementById('hist-date-range')) document.getElementById('hist-date-range').value = '';
         if(document.getElementById('hist-from-date')) document.getElementById('hist-from-date').value = '';
         if(document.getElementById('hist-to-date')) document.getElementById('hist-to-date').value = '';
         

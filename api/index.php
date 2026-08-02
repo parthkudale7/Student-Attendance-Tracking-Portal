@@ -35,6 +35,43 @@ try {
         case 'faculty':
             if ($method === 'GET') {
                 $email = $_GET['email'] ?? null;
+                $found = null;
+
+                // Try fetching from attendance_db first
+                try {
+                    $attDb = new PDO("mysql:host=127.0.0.1;dbname=attendance_db;charset=utf8mb4", 'root', '', [
+                        PDO::ATTR_ERRMODE => PDO::ERRMODE_SILENT,
+                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+                    ]);
+                    if ($email) {
+                        $s = $attDb->prepare("SELECT f.*, d.department_name, d.department_code 
+                                              FROM faculties f 
+                                              LEFT JOIN departments d ON f.department_id = d.department_id 
+                                              WHERE f.email = ? LIMIT 1");
+                        $s->execute([$email]);
+                        $found = $s->fetch();
+                    }
+                } catch (Exception $e) {}
+
+                if ($found) {
+                    $dName = $found['department_name'] ?? $found['department_code'] ?? 'Computer Science';
+                    $desig = $found['designation'] ?? 'Assistant Professor';
+                    $photoUrl = !empty($found['photo']) ? '../assets/img/faculties/' . $found['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($found['full_name']) . '&background=4F7CFF&color=fff';
+                    jsonResponse([
+                        'id' => $found['employee_id'] ?? ('FAC' . $found['faculty_id']),
+                        'email' => $found['email'],
+                        'name' => $found['full_name'],
+                        'role' => $desig,
+                        'designation' => $desig,
+                        'department' => $dName,
+                        'qualification' => $found['qualification'] ?? '',
+                        'mobile' => $found['phone'] ?? '',
+                        'avatar' => $photoUrl,
+                        'subjects' => ['Data Structures', 'Algorithms', 'Operating Systems']
+                    ]);
+                }
+
+                // Fallback to local faculty_attendance table
                 if ($email) {
                     $stmt = $pdo->prepare("SELECT * FROM Faculty WHERE email = ?");
                     $stmt->execute([$email]);
@@ -47,8 +84,10 @@ try {
                         'id' => $faculty['faculty_id'],
                         'email' => $faculty['email'],
                         'name' => $faculty['faculty_name'],
-                        'role' => $faculty['department'],
-                        'avatar' => $faculty['avatar'],
+                        'role' => $faculty['designation'] ?? $faculty['department'],
+                        'designation' => $faculty['designation'] ?? 'Assistant Professor',
+                        'department' => $faculty['department'] ?? 'Computer Science',
+                        'avatar' => $faculty['avatar'] ?? ('https://ui-avatars.com/api/?name=' . urlencode($faculty['faculty_name']) . '&background=4F7CFF&color=fff'),
                         'subjects' => ['Data Structures', 'Algorithms', 'Operating Systems']
                     ]);
                 } else {

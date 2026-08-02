@@ -353,20 +353,46 @@ const facultyDB = [
     }
 ];
 
-let currentUser = facultyDB[0]; // Default to first mock user for UI data
+let currentUser = {
+    name: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name) ? window.PHP_USER.name : 'Faculty Member',
+    email: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.email) ? window.PHP_USER.email : '',
+    role: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.designation) ? window.PHP_USER.designation : 'Faculty Member',
+    designation: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.designation) ? window.PHP_USER.designation : 'Faculty Member',
+    department: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.department) ? window.PHP_USER.department : 'Computer Science',
+    qualification: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.qualification) ? window.PHP_USER.qualification : '',
+    id: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.id) ? window.PHP_USER.id : 'FAC1001',
+    mobile: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.mobile) ? window.PHP_USER.mobile : '',
+    avatar: (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.avatar) ? window.PHP_USER.avatar : 'https://ui-avatars.com/api/?name=Faculty&background=4F7CFF&color=fff',
+    subjects: ['Data Structures', 'Database Systems', 'Algorithms']
+};
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Load User from LocalStorage if exists, else use default mock user
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        try {
-            currentUser = JSON.parse(savedUser);
-        } catch (e) {
-            console.error("Invalid user data", e);
-            localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        }
-    } else {
+    if (typeof window.PHP_USER !== 'undefined' && window.PHP_USER && window.PHP_USER.name) {
+        currentUser = {
+            id: window.PHP_USER.id || 'FAC1001',
+            name: window.PHP_USER.name,
+            email: window.PHP_USER.email,
+            role: window.PHP_USER.designation || 'Faculty Member',
+            designation: window.PHP_USER.designation || 'Faculty Member',
+            department: window.PHP_USER.department || 'Computer Science',
+            qualification: window.PHP_USER.qualification || '',
+            mobile: window.PHP_USER.mobile || '',
+            avatar: window.PHP_USER.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(window.PHP_USER.name)}&background=4F7CFF&color=fff`,
+            subjects: ['Data Structures', 'Database Systems', 'Algorithms']
+        };
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    } else {
+        const savedUser = localStorage.getItem('currentUser');
+        if (savedUser) {
+            try {
+                const parsed = JSON.parse(savedUser);
+                if (parsed && parsed.name) {
+                    currentUser = parsed;
+                }
+            } catch (e) {
+                console.error("Invalid user data", e);
+            }
+        }
     }
 
     // Initialization

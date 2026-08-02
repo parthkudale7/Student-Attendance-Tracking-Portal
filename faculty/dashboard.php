@@ -2,6 +2,39 @@
 session_start();
 require_once '../includes/auth_guard.php';
 check_auth(['faculty', 'admin']);
+require_once '../includes/db.php';
+
+// Fetch detailed faculty information from database using logged-in user email
+$facultyEmail = $_SESSION['email'] ?? '';
+$facultyName = $_SESSION['name'] ?? 'Faculty Member';
+$facultyDept = $_SESSION['department'] ?? 'Computer Science';
+$facultyDesignation = $_SESSION['designation'] ?? 'Assistant Professor';
+$facultyQualification = $_SESSION['qualification'] ?? '';
+$facultyEmpId = $_SESSION['employee_id'] ?? ('FAC' . ($_SESSION['user_id'] ?? ''));
+$facultyPhone = $_SESSION['phone'] ?? ($_SESSION['user_phone'] ?? '');
+$facultyAvatar = $_SESSION['avatar'] ?? ('https://ui-avatars.com/api/?name=' . urlencode($facultyName) . '&background=4F7CFF&color=fff');
+
+if (!empty($facultyEmail)) {
+    try {
+        $stmt = $pdo->prepare("SELECT f.*, d.department_name, d.department_code 
+                               FROM faculties f 
+                               LEFT JOIN departments d ON f.department_id = d.department_id 
+                               WHERE f.email = ? LIMIT 1");
+        $stmt->execute([$facultyEmail]);
+        $fac = $stmt->fetch();
+        if ($fac) {
+            $facultyName = $fac['full_name'] ?: $facultyName;
+            $facultyDept = $fac['department_name'] ?: ($fac['department_code'] ?: $facultyDept);
+            $facultyDesignation = $fac['designation'] ?: $facultyDesignation;
+            $facultyQualification = $fac['qualification'] ?: $facultyQualification;
+            $facultyEmpId = $fac['employee_id'] ?: $facultyEmpId;
+            $facultyPhone = $fac['phone'] ?: $facultyPhone;
+            if (!empty($fac['photo'])) {
+                $facultyAvatar = '../assets/img/faculties/' . $fac['photo'];
+            }
+        }
+    } catch (Exception $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -16,6 +49,19 @@ check_auth(['faculty', 'admin']);
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="style.css?v=<?php echo time(); ?>">
+    <script>
+        window.PHP_USER = {
+            id: <?php echo json_encode($facultyEmpId); ?>,
+            name: <?php echo json_encode($facultyName); ?>,
+            email: <?php echo json_encode($facultyEmail); ?>,
+            department: <?php echo json_encode($facultyDept); ?>,
+            designation: <?php echo json_encode($facultyDesignation); ?>,
+            qualification: <?php echo json_encode($facultyQualification); ?>,
+            mobile: <?php echo json_encode($facultyPhone); ?>,
+            avatar: <?php echo json_encode($facultyAvatar); ?>,
+            role: <?php echo json_encode($facultyDesignation); ?>
+        };
+    </script>
 </head>
 <body>
     <!-- Ambient Background Elements -->
@@ -105,10 +151,10 @@ check_auth(['faculty', 'admin']);
                     </div>
                     
                     <div class="user-profile" id="profile-toggle" style="position: relative; cursor: pointer;">
-                        <img src="https://ui-avatars.com/api/?name=Prof+Smith&background=0D8ABC&color=fff" alt="Profile" class="profile-img" id="nav-profile-img">
+                        <img src="<?php echo htmlspecialchars($facultyAvatar); ?>" alt="Profile" class="profile-img" id="nav-profile-img">
                         <div class="profile-info">
-                            <span class="profile-name" id="nav-profile-name"><?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?></span>
-                            <span class="profile-role" id="nav-profile-role">Computer Science</span>
+                            <span class="profile-name" id="nav-profile-name"><?php echo htmlspecialchars($facultyName); ?></span>
+                            <span class="profile-role" id="nav-profile-role"><?php echo htmlspecialchars($facultyDesignation . (!empty($facultyDept) ? ' • ' . $facultyDept : '')); ?></span>
                         </div>
                         <i class="fa-solid fa-chevron-down" style="margin-left: 8px; color: var(--text-muted); font-size: 12px;"></i>
                         
@@ -143,7 +189,7 @@ check_auth(['faculty', 'admin']);
                             <span style="width: 6px; height: 6px; background: #10B981; border-radius: 50%; display: inline-block;"></span> FACULTY PORTAL ACTIVE
                         </span>
                     </div>
-                    <h2>Welcome back, <?php echo htmlspecialchars($_SESSION['name'] ?? 'Faculty'); ?>! 👋</h2>
+                    <h2>Welcome back, <?php echo htmlspecialchars($facultyName); ?>! 👋</h2>
                     <p>Here is an overview of your academic schedules, attendance statistics, and pending validations for today.</p>
                 </div>
                 <div class="banner-image">
@@ -730,48 +776,48 @@ check_auth(['faculty', 'admin']);
             </div>
 
             <!-- Filters Section -->
-            <div class="filters-card glass-card premium-filter-panel" style="padding: 24px; border-radius: 18px;">
-                <div class="filters-grid premium-filters" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; align-items: end;">
-                    <div class="form-group premium-group mb-0">
+            <div class="filters-card glass-card premium-filter-panel" style="padding: 22px 24px; border-radius: 18px; width: 100%; box-sizing: border-box;">
+                <div class="filters-flex-container" style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; width: 100%;">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 180px; min-width: 160px;">
                         <label>Date Range</label>
                         <div class="date-range-wrapper" style="position: relative;">
                             <i class="fa-regular fa-calendar" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-secondary);"></i>
                             <input type="text" class="glass-input date-range-input" id="hist-date-range" placeholder="01/07/2025 - 27/07/2026" style="padding-left: 38px; width: 100%;">
                         </div>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 160px; min-width: 140px;">
                         <label>Department</label>
-                        <select class="glass-input" id="hist-dept" onchange="window.historyLogic.onDeptChange()">
+                        <select class="glass-input" id="hist-dept" onchange="window.historyLogic.onDeptChange()" style="width: 100%;">
                             <option value="">All Departments</option>
                         </select>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 140px; min-width: 130px;">
                         <label>Semester</label>
-                        <select class="glass-input" id="hist-sem" onchange="window.historyLogic.onSemChange()">
+                        <select class="glass-input" id="hist-sem" onchange="window.historyLogic.onSemChange()" style="width: 100%;">
                             <option value="">All Semesters</option>
                         </select>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 120px; min-width: 110px;">
                         <label>Division</label>
-                        <select class="glass-input" id="hist-div">
+                        <select class="glass-input" id="hist-div" style="width: 100%;">
                             <option value="">All Divisions</option>
                         </select>
                     </div>
-                    <div class="form-group premium-group mb-0">
+                    <div class="form-group premium-group mb-0" style="flex: 1 1 180px; min-width: 160px;">
                         <label>Subject</label>
-                        <select class="glass-input" id="hist-subject">
+                        <select class="glass-input" id="hist-subject" style="width: 100%;">
                             <option value="">All Subjects</option>
                         </select>
                     </div>
-                    <div class="form-group filter-actions-premium mb-0" style="display: flex; gap: 12px; grid-column: span 1;">
-                        <button class="btn btn-primary premium-btn-blue" onclick="window.historyLogic.applyFilters()" style="flex: 1;"><i class="fa-solid fa-filter"></i> Apply Filters</button>
-                        <button class="btn btn-outline premium-btn-reset" onclick="window.historyLogic.resetFilters()"><i class="fa-solid fa-rotate-right"></i> Reset</button>
+                    <div class="form-group filter-actions-premium mb-0" style="flex: 0 0 auto; display: flex; gap: 10px; align-items: flex-end;">
+                        <button class="btn btn-primary premium-btn-blue" onclick="window.historyLogic.applyFilters()" style="white-space: nowrap; padding: 10px 18px;"><i class="fa-solid fa-filter"></i> Apply Filters</button>
+                        <button class="btn btn-outline premium-btn-reset" onclick="window.historyLogic.resetFilters()" style="white-space: nowrap; padding: 10px 16px;"><i class="fa-solid fa-rotate-right"></i> Reset</button>
                     </div>
                 </div>
             </div>
 
             <!-- History Table Container -->
-            <div class="attendance-table-container glass-card premium-table-card" id="hist-table-container" style="display: flex; flex-direction: column; overflow: visible; border-radius: 18px; padding: 0;">
+            <div class="attendance-table-container glass-card premium-table-card" id="hist-table-container" style="display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; padding: 0; width: 100%; max-width: 100%;">
                 
                 <!-- Table Header Actions -->
                 <div class="table-header-actions" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.05);">
@@ -785,25 +831,25 @@ check_auth(['faculty', 'admin']);
                     </div>
                 </div>
 
-                <div class="table-scroll" style="max-height: 550px; overflow-y: auto;">
-                    <table class="glass-table premium-history-table" style="width: 100%; border-collapse: collapse; min-width: 1400px;">
-                        <thead style="position: sticky; top: 0; z-index: 2; background: rgba(7, 26, 58, 0.95); backdrop-filter: blur(10px);">
+                <div class="table-scroll" style="max-height: 550px; overflow-x: auto; overflow-y: auto; width: 100%; max-width: 100%; display: block; position: relative;">
+                    <table class="glass-table premium-history-table" style="width: 100%; border-collapse: collapse; min-width: 1950px;">
+                        <thead style="position: sticky; top: 0; z-index: 10; background: rgba(7, 26, 58, 0.98); backdrop-filter: blur(12px);">
                             <tr>
-                                <th>Date</th>
-                                <th>Department</th>
-                                <th>Semester</th>
-                                <th>Division</th>
-                                <th>Subject</th>
-                                <th>Lecture No.</th>
-                                <th>Roll No.</th>
-                                <th>Student Name</th>
-                                <th>Attendance Status</th>
-                                <th>Validation Status</th>
-                                <th>Faculty</th>
-                                <th>Validated By</th>
-                                <th>Validation Date & Time</th>
-                                <th>Remarks</th>
-                                <th>Actions</th>
+                                <th style="min-width: 110px; white-space: nowrap;">Date</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Department</th>
+                                <th style="min-width: 100px; white-space: nowrap;">Semester</th>
+                                <th style="min-width: 90px; white-space: nowrap;">Division</th>
+                                <th style="min-width: 220px; white-space: nowrap;">Subject</th>
+                                <th style="min-width: 110px; white-space: nowrap;">Lecture No.</th>
+                                <th style="min-width: 110px; white-space: nowrap;">Roll No.</th>
+                                <th style="min-width: 160px; white-space: nowrap;">Student Name</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Attendance Status</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Validation Status</th>
+                                <th style="min-width: 130px; white-space: nowrap;">Faculty</th>
+                                <th style="min-width: 130px; white-space: nowrap;">Validated By</th>
+                                <th style="min-width: 190px; white-space: nowrap;">Validation Date & Time</th>
+                                <th style="min-width: 140px; white-space: nowrap;">Remarks</th>
+                                <th style="min-width: 80px; text-align: center; white-space: nowrap;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="hist-tbody">
@@ -849,27 +895,35 @@ check_auth(['faculty', 'admin']);
     <!-- 7. My Profile View -->
     <template id="tpl-my-profile">
         <div class="view-content fade-in">
-            <div class="glass-card profile-card" style="max-width: 600px; margin: 0 auto; text-align: center; padding: 2rem;">
-                <img src="" alt="Profile" id="my-profile-img" style="width: 120px; height: 120px; border-radius: 50%; margin-bottom: 1rem; border: 3px solid rgba(255,255,255,0.2);">
-                <h2 id="my-profile-name" style="margin-bottom: 0.5rem;">Faculty Name</h2>
-                <p id="my-profile-designation" style="color: var(--text-secondary); margin-bottom: 1.5rem;">Designation</p>
+            <div class="glass-card profile-card" style="max-width: 650px; margin: 0 auto; text-align: center; padding: 2rem;">
+                <img src="<?php echo htmlspecialchars($facultyAvatar); ?>" alt="Profile" id="my-profile-img" style="width: 120px; height: 120px; border-radius: 50%; margin-bottom: 1rem; border: 3px solid rgba(255,255,255,0.2); object-fit: cover;">
+                <h2 id="my-profile-name" style="margin-bottom: 0.5rem;"><?php echo htmlspecialchars($facultyName); ?></h2>
+                <p id="my-profile-designation" style="color: var(--text-secondary); margin-bottom: 1.5rem; font-weight: 500;"><?php echo htmlspecialchars($facultyDesignation); ?></p>
                 
-                <div class="profile-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: left; margin-bottom: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px;">
+                <div class="profile-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; text-align: left; margin-bottom: 2rem; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
                     <div>
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Faculty ID</span>
-                        <div id="my-profile-id" style="font-weight: 500;">-</div>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 3px;">Faculty ID / Employee ID</span>
+                        <div id="my-profile-id" style="font-weight: 600; color: var(--neon-blue);"><?php echo htmlspecialchars($facultyEmpId); ?></div>
                     </div>
                     <div>
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Department</span>
-                        <div id="my-profile-dept" style="font-weight: 500;">-</div>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 3px;">Department</span>
+                        <div id="my-profile-dept" style="font-weight: 600;"><?php echo htmlspecialchars($facultyDept); ?></div>
                     </div>
                     <div>
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Email ID</span>
-                        <div id="my-profile-email" style="font-weight: 500;">-</div>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 3px;">Designation</span>
+                        <div id="my-profile-grid-desig" style="font-weight: 600;"><?php echo htmlspecialchars($facultyDesignation); ?></div>
                     </div>
                     <div>
-                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Mobile Number</span>
-                        <div id="my-profile-mobile" style="font-weight: 500;">-</div>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 3px;">Qualification</span>
+                        <div id="my-profile-qualification" style="font-weight: 600;"><?php echo htmlspecialchars($facultyQualification ?: 'Not Specified'); ?></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 3px;">Email ID</span>
+                        <div id="my-profile-email" style="font-weight: 500; word-break: break-all;"><?php echo htmlspecialchars($facultyEmail); ?></div>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-secondary); font-size: 0.85rem; display: block; margin-bottom: 3px;">Mobile Number</span>
+                        <div id="my-profile-mobile" style="font-weight: 500;"><?php echo htmlspecialchars($facultyPhone ?: 'Not Specified'); ?></div>
                     </div>
                 </div>
                 <button class="btn btn-primary" onclick="navigateTo('edit-profile')"><i class="fa-solid fa-pen"></i> Edit Profile</button>
@@ -880,24 +934,36 @@ check_auth(['faculty', 'admin']);
     <!-- 8. Edit Profile View -->
     <template id="tpl-edit-profile">
         <div class="view-content fade-in">
-            <div class="glass-card profile-card" style="max-width: 600px; margin: 0 auto; padding: 2rem;">
-                <h3 class="card-title mb-4">Edit Profile</h3>
+            <div class="glass-card profile-card" style="max-width: 650px; margin: 0 auto; padding: 2rem;">
+                <h3 class="card-title mb-4"><i class="fa-solid fa-user-pen"></i> Edit Faculty Profile</h3>
                 <form id="edit-profile-form" onsubmit="saveProfile(event)">
                     <div class="form-group mb-3">
-                        <label>Name</label>
-                        <input type="text" class="glass-input" id="edit-name" required>
+                        <label>Full Name</label>
+                        <input type="text" class="glass-input" id="edit-name" value="<?php echo htmlspecialchars($facultyName); ?>" required>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Department</label>
+                        <input type="text" class="glass-input" id="edit-department" value="<?php echo htmlspecialchars($facultyDept); ?>" readonly style="opacity: 0.7; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Designation</label>
+                        <input type="text" class="glass-input" id="edit-designation" value="<?php echo htmlspecialchars($facultyDesignation); ?>" readonly style="opacity: 0.7; cursor: not-allowed;">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Qualification</label>
+                        <input type="text" class="glass-input" id="edit-qualification" value="<?php echo htmlspecialchars($facultyQualification); ?>" placeholder="e.g. Ph.D, M.Tech, B.E.">
                     </div>
                     <div class="form-group mb-3">
                         <label>Email ID</label>
-                        <input type="email" class="glass-input" id="edit-email" required>
+                        <input type="email" class="glass-input" id="edit-email" value="<?php echo htmlspecialchars($facultyEmail); ?>" required>
                     </div>
                     <div class="form-group mb-3">
                         <label>Mobile Number</label>
-                        <input type="text" class="glass-input" id="edit-mobile" required>
+                        <input type="text" class="glass-input" id="edit-mobile" value="<?php echo htmlspecialchars($facultyPhone); ?>">
                     </div>
                     <div class="form-group mb-4">
                         <label>Profile Picture URL</label>
-                        <input type="url" class="glass-input" id="edit-picture">
+                        <input type="url" class="glass-input" id="edit-picture" value="<?php echo htmlspecialchars($facultyAvatar); ?>">
                     </div>
                     <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                         <button type="button" class="btn btn-outline" onclick="navigateTo('my-profile')">Cancel</button>
